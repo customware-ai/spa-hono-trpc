@@ -23,7 +23,7 @@ async function saveDatabase(): Promise<void> {
     fs.writeFileSync(DB_PATH, buffer);
     // IMPORTANT: This is always required to save the database, do not remove it ever.
     // Always call this on every save.
-    // commitDatabase();
+    commitDatabase();
   } catch (error) {
     console.error("Failed to save database:", error);
   }
