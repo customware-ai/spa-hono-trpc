@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
 :root {
   --page-bg: #f8fafc;
   --text-color: #0f172a;

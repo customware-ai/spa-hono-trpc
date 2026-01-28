@@ -6,24 +6,34 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "lint": "oxlint --type-aware ."
   },
   "dependencies": {
-    "@react-router/node": "7.10.1",
-    "@react-router/serve": "7.10.1",
+    "@react-router/node": "7.13.0",
+    "@react-router/serve": "7.13.0",
     "isbot": "^5.1.31",
+    "neverthrow": "8.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-router": "7.10.1",
-    "sql.js": "^1.13.0"
+    "react-router": "7.13.0",
+    "sql.js": "^1.13.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@react-router/dev": "7.10.1",
+    "@react-router/dev": "7.13.0",
+    "@tailwindcss/vite": "4.1.18",
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/sql.js": "^1.4.9",
+    "oxlint": "^1.0.0",
+    "oxlint-tsgolint": "latest",
+    "tailwindcss": "4.1.18",
     "typescript": "^5.9.2",
-    "vite": "npm:rolldown-vite@7.2.11"
+    "vite": "8.0.0-beta.10"
+  },
+  "overrides": {
+    "vite": "8.0.0-beta.10"
   }
 }

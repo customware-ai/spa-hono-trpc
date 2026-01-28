@@ -1,26 +1,44 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, type ReactElement } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useNavigation } from "react-router";
-import type { SqlValue } from "../db";
 import {
   getUsers,
   getAllTasks,
-  createUser,
+  createUserDirect,
   updateUser,
   deleteUser,
-  createTask,
+  createTaskDirect,
   updateTask,
   deleteTask,
 } from "../db";
 import { json } from "../utils/json";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { Input, Textarea } from "../components/ui/Input";
+import { Alert } from "../components/ui/Alert";
+import type { UserRow, TaskRow, LoaderData } from "../schemas";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const users = await getUsers();
-  const tasks = await getAllTasks();
-  return { users, tasks };
+function getFormString(formData: FormData, key: string): string | null {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function loader(_args: LoaderFunctionArgs): Promise<LoaderData> {
+  const usersResult = await getUsers();
+  const tasksResult = await getAllTasks();
+
+  if (usersResult.isErr()) {
+    return { users: [], tasks: {}, error: usersResult.error.message };
+  }
+
+  if (tasksResult.isErr()) {
+    return { users: usersResult.value, tasks: {}, error: tasksResult.error.message };
+  }
+
+  return { users: usersResult.value, tasks: tasksResult.value };
+}
+
+export async function action({ request }: ActionFunctionArgs): Promise<Response> {
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
@@ -31,84 +49,98 @@ export async function action({ request }: ActionFunctionArgs) {
 
     switch (action) {
       case "create": {
-        const name = formData.get("name");
-        const email = formData.get("email");
+        const name = getFormString(formData, "name");
+        const email = getFormString(formData, "email");
         if (!name || !email) {
           return json(
             { error: "Missing required fields: name, email" },
             { status: 400 }
           );
         }
-        const user = await createUser(String(name), String(email));
-        return json(user, { status: 201 });
+        const result = await createUserDirect(name, email);
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
+        return json(result.value, { status: 201 });
       }
 
       case "update": {
-        const id = formData.get("id");
-        const name = formData.get("name");
-        const email = formData.get("email");
+        const id = getFormString(formData, "id");
+        const name = getFormString(formData, "name");
+        const email = getFormString(formData, "email");
         if (!id || !name || !email) {
           return json(
             { error: "Missing required fields: id, name, email" },
             { status: 400 }
           );
         }
-        const user = await updateUser(
-          parseInt(String(id)),
-          String(name),
-          String(email)
-        );
-        return json(user);
+        const result = await updateUser(parseInt(id), name, email);
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
+        return json(result.value);
       }
 
       case "delete": {
-        const id = formData.get("id");
+        const id = getFormString(formData, "id");
         if (!id) {
           return json({ error: "Missing required field: id" }, { status: 400 });
         }
-        await deleteUser(parseInt(String(id)));
+        const result = await deleteUser(parseInt(id));
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
         return json({ success: true });
       }
 
       case "create_task": {
-        const userId = formData.get("userId");
-        const title = formData.get("title");
-        const description = formData.get("description");
+        const userId = getFormString(formData, "userId");
+        const title = getFormString(formData, "title");
+        const description = getFormString(formData, "description");
         if (!userId || !title) {
           return json(
             { error: "Missing required fields: userId, title" },
             { status: 400 }
           );
         }
-        const task = await createTask(
-          parseInt(String(userId)),
-          String(title),
-          String(description || "")
+        const result = await createTaskDirect(
+          parseInt(userId),
+          title,
+          description || ""
         );
-        return json(task, { status: 201 });
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
+        return json(result.value, { status: 201 });
       }
 
       case "toggle_task": {
-        const id = formData.get("id");
-        const completed = formData.get("completed");
+        const id = getFormString(formData, "id");
+        const completed = getFormString(formData, "completed");
         if (!id) {
           return json({ error: "Missing required field: id" }, { status: 400 });
         }
-        const task = await updateTask(
-          parseInt(String(id)),
+        const result = await updateTask(
+          parseInt(id),
           undefined,
           undefined,
           completed === "true"
         );
-        return json(task);
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
+        return json(result.value);
       }
 
       case "delete_task": {
-        const id = formData.get("id");
+        const id = getFormString(formData, "id");
         if (!id) {
           return json({ error: "Missing required field: id" }, { status: 400 });
         }
-        await deleteTask(parseInt(String(id)));
+        const result = await deleteTask(parseInt(id));
+        if (result.isErr()) {
+          return json({ error: result.error.message }, { status: 500 });
+        }
         return json({ success: true });
       }
 
@@ -123,38 +155,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-interface User {
-  id?: number;
-  name: string;
-  email: string;
-  created_at?: string;
-}
-
-interface Task {
-  id?: number;
-  user_id: number;
-  title: string;
-  description: string;
-  completed: number;
-  created_at?: string;
-}
-
-interface LoaderData {
-  users: SqlValue[][];
-  tasks: Record<number, SqlValue[][]>;
-}
-
-export default function DatabasePage() {
-  const { users: loaderUsers, tasks: loaderTasks } = useLoaderData<LoaderData>();
+export default function DatabasePage(): ReactElement {
+  const { users: loaderUsers, tasks: loaderTasks, error: loaderError } = useLoaderData<LoaderData>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const [showLoading, setShowLoading] = useState(false);
 
-  // Show loading indicator after a short delay to avoid flashing
   useEffect(() => {
     if (isSubmitting) {
       const timer = setTimeout(() => setShowLoading(true), 100);
-      return () => clearTimeout(timer);
+      return (): void => { clearTimeout(timer); };
     } else {
       setShowLoading(false);
     }
@@ -166,6 +176,7 @@ export default function DatabasePage() {
     email: row[2] as string,
     created_at: row[3] as string,
   }));
+
   const tasks = Object.entries(loaderTasks || {}).reduce(
     (acc, [userId, taskRows]) => {
       acc[parseInt(userId)] = taskRows.map((row) => ({
@@ -178,111 +189,107 @@ export default function DatabasePage() {
       }));
       return acc;
     },
-    {} as Record<number, Task[]>
+    {} as Record<number, TaskRow[]>
   );
+
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(loaderError || "");
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
-  // Fetchers for CRUD operations
   const userFetcher = useFetcher();
   const taskFetcher = useFetcher();
 
-  // User form state
   const [userForm, setUserForm] = useState({ name: "", email: "" });
-
-  // Task form state
   const [taskForm, setTaskForm] = useState({ title: "", description: "" });
 
   const handleCreateUser = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    (e: React.FormEvent<HTMLFormElement>): void => {
       e.preventDefault();
       if (!userForm.name || !userForm.email) {
         setError("Please fill in all fields");
         return;
       }
 
-      userFetcher.submit(
+      void userFetcher.submit(
         {
           action: editingUserId ? "update" : "create",
           id: editingUserId || "",
           ...userForm,
         },
-        { method: "post" },
+        { method: "post" }
       );
     },
-    [userForm, editingUserId, userFetcher],
+    [userForm, editingUserId, userFetcher]
   );
 
   const handleCreateTask = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    (e: React.FormEvent<HTMLFormElement>): void => {
       e.preventDefault();
       if (!taskForm.title || !selectedUserId) {
         setError("Please fill in required fields");
         return;
       }
 
-      taskFetcher.submit(
+      void taskFetcher.submit(
         { action: "create_task", userId: selectedUserId, ...taskForm },
-        { method: "post" },
+        { method: "post" }
       );
     },
-    [taskForm, selectedUserId, taskFetcher],
+    [taskForm, selectedUserId, taskFetcher]
   );
 
   const handleDeleteUser = useCallback(
-    (userId: number) => {
+    (userId: number): void => {
       if (
         !confirm(
-          "Are you sure you want to delete this user and all their tasks?",
+          "Are you sure you want to delete this user and all their tasks?"
         )
       ) {
         return;
       }
 
-      userFetcher.submit(
+      void userFetcher.submit(
         { action: "delete", id: userId },
-        { method: "post" },
+        { method: "post" }
       );
     },
-    [userFetcher],
+    [userFetcher]
   );
 
   const handleToggleTask = useCallback(
-    (taskId: number, completed: boolean) => {
+    (taskId: number, completed: boolean): void => {
       if (!selectedUserId) return;
 
-      taskFetcher.submit(
+      void taskFetcher.submit(
         { action: "toggle_task", id: taskId, completed: String(!completed) },
-        { method: "post" },
+        { method: "post" }
       );
     },
-    [selectedUserId, taskFetcher],
+    [selectedUserId, taskFetcher]
   );
 
   const handleDeleteTask = useCallback(
-    (taskId: number) => {
+    (taskId: number): void => {
       if (!selectedUserId) return;
 
-      taskFetcher.submit(
+      void taskFetcher.submit(
         { action: "delete_task", id: taskId },
-        { method: "post" },
+        { method: "post" }
       );
     },
-    [selectedUserId, taskFetcher],
+    [selectedUserId, taskFetcher]
   );
 
-  const startEditingUser = useCallback((user: User) => {
+  const startEditingUser = useCallback((user: UserRow): void => {
     setEditingUserId(user.id || null);
     setUserForm({ name: user.name, email: user.email });
   }, []);
 
-  const cancelEditUser = useCallback(() => {
+  const cancelEditUser = useCallback((): void => {
     setEditingUserId(null);
     setUserForm({ name: "", email: "" });
   }, []);
 
-  // Clear task form when task fetcher completes submission
   useEffect(() => {
     if (taskFetcher.state === "idle" && taskFetcher.data) {
       setTaskForm({ title: "", description: "" });
@@ -290,288 +297,201 @@ export default function DatabasePage() {
   }, [taskFetcher.state, taskFetcher.data]);
 
   return (
-    <div style={styles.container}>
-      <h1>SQLite Database Management</h1>
+    <div className="max-w-7xl mx-auto px-5 py-8 font-sans">
+      <h1 className="text-2xl font-bold text-surface-800 mb-6">
+        SQLite Database Management
+      </h1>
 
-      {error && <div style={styles.error}>{error}</div>}
+      {error && (
+        <Alert variant="danger" className="mb-5" dismissible onDismiss={(): void => setError("")}>
+          {error}
+        </Alert>
+      )}
 
       {showLoading && (
-        <div style={styles.loadingOverlay}>
-          <div style={styles.loadingSpinner} />
+        <div className="flex items-center justify-center gap-3 p-4 bg-info-light rounded-lg mb-5 text-info-dark font-medium">
+          <div className="w-5 h-5 border-2 border-info border-t-transparent rounded-full animate-spin" />
           <span>Saving...</span>
         </div>
       )}
 
-      <div style={styles.grid}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
         {/* Users Section */}
-        <section style={styles.section}>
-          <h2>Users</h2>
+        <Card variant="default">
+          <h2 className="text-lg font-semibold text-surface-800 mb-4 pb-2 border-b border-surface-100">
+            Users
+          </h2>
 
-          <form onSubmit={handleCreateUser} style={styles.form}>
-            <input
+          <form onSubmit={handleCreateUser} className="flex flex-col gap-2.5 mb-5">
+            <Input
               type="text"
               placeholder="Name"
               value={userForm.name}
-              onChange={(e) =>
+              onChange={(e): void =>
                 setUserForm({ ...userForm, name: e.target.value })
               }
-              style={styles.input}
             />
-            <input
+            <Input
               type="email"
               placeholder="Email"
               value={userForm.email}
-              onChange={(e) =>
+              onChange={(e): void =>
                 setUserForm({ ...userForm, email: e.target.value })
               }
-              style={styles.input}
             />
-            <button
-              type="submit"
-              disabled={userFetcher.state !== "idle"}
-              style={styles.button}
-            >
-              {userFetcher.state === "submitting"
-                ? editingUserId
-                  ? "Updating..."
-                  : "Creating..."
-                : editingUserId
-                ? "Update User"
-                : "Create User"}
-            </button>
-            {editingUserId && (
-              <button
-                type="button"
-                onClick={cancelEditUser}
-                style={{ ...styles.button, background: "#6c757d" }}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={userFetcher.state !== "idle"}
+                loading={userFetcher.state === "submitting"}
+                className="flex-1"
               >
-                Cancel
-              </button>
-            )}
+                {editingUserId ? "Update User" : "Create User"}
+              </Button>
+              {editingUserId && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={cancelEditUser}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
 
-          <div style={styles.list}>
+          <div className="flex flex-col gap-2.5">
             {users.length === 0 ? (
-              <p style={{ color: "#999" }}>No users yet</p>
+              <p className="text-surface-500">No users yet</p>
             ) : (
               users.map((user) => (
                 <div
                   key={user.id}
-                  style={{
-                    ...styles.listItem,
-                    background:
-                      selectedUserId === user.id ? "#e7f3ff" : "#f9f9f9",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setSelectedUserId(user.id || null)}
+                  className={`flex justify-between items-start p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedUserId === user.id
+                      ? "bg-primary-50 border-primary-200"
+                      : "bg-surface-50 border-surface-100 hover:bg-surface-100"
+                  }`}
+                  onClick={(): void => setSelectedUserId(user.id || null)}
                 >
                   <div>
-                    <strong>{user.name}</strong>
+                    <strong className="text-surface-800">{user.name}</strong>
                     <br />
-                    <small style={{ color: "#666" }}>{user.email}</small>
+                    <small className="text-surface-500">{user.email}</small>
                   </div>
-                  <div style={styles.actions}>
-                    <button
-                      onClick={(e) => {
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e): void => {
                         e.stopPropagation();
                         startEditingUser(user);
                       }}
-                      style={{ ...styles.smallButton, background: "#007bff" }}
                     >
                       Edit
-                    </button>
-                    <button
-                      onClick={(e) => {
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={(e): void => {
                         e.stopPropagation();
                         handleDeleteUser(user.id!);
                       }}
-                      style={{ ...styles.smallButton, background: "#dc3545" }}
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </section>
+        </Card>
 
         {/* Tasks Section */}
-        <section style={styles.section}>
-          <h2>Tasks</h2>
+        <Card variant="default">
+          <h2 className="text-lg font-semibold text-surface-800 mb-4 pb-2 border-b border-surface-100">
+            Tasks
+          </h2>
 
           {selectedUserId ? (
             <>
-              <form onSubmit={handleCreateTask} style={styles.form}>
-                <input
+              <form onSubmit={handleCreateTask} className="flex flex-col gap-2.5 mb-5">
+                <Input
                   type="text"
                   placeholder="Task Title"
                   value={taskForm.title}
-                  onChange={(e) =>
+                  onChange={(e): void =>
                     setTaskForm({ ...taskForm, title: e.target.value })
                   }
-                  style={styles.input}
                 />
-                <textarea
+                <Textarea
                   placeholder="Description (optional)"
                   value={taskForm.description}
-                  onChange={(e) =>
+                  onChange={(e): void =>
                     setTaskForm({ ...taskForm, description: e.target.value })
                   }
-                  style={{ ...styles.input, minHeight: "60px" }}
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={taskFetcher.state !== "idle"}
-                  style={styles.button}
+                  loading={taskFetcher.state === "submitting"}
                 >
-                  {taskFetcher.state === "submitting" ? "Adding..." : "Add Task"}
-                </button>
+                  Add Task
+                </Button>
               </form>
 
-              <div style={styles.list}>
+              <div className="flex flex-col gap-2.5">
                 {(tasks[selectedUserId] || []).length === 0 ? (
-                  <p style={{ color: "#999" }}>No tasks yet</p>
+                  <p className="text-surface-500">No tasks yet</p>
                 ) : (
                   (tasks[selectedUserId] || []).map((task) => (
-                    <div key={task.id} style={styles.listItem}>
-                      <div style={{ flex: 1 }}>
-                        <input
-                          type="checkbox"
-                          checked={task.completed === 1}
-                          onChange={() =>
-                            handleToggleTask(task.id!, task.completed === 1)
-                          }
-                          style={{ marginRight: "8px" }}
-                        />
-                        <strong
-                          style={{
-                            textDecoration:
-                              task.completed === 1 ? "line-through" : "none",
-                          }}
-                        >
-                          {task.title}
-                        </strong>
-                        {task.description && (
-                          <div style={{ fontSize: "0.9em", color: "#666" }}>
-                            {task.description}
+                    <div
+                      key={task.id}
+                      className="flex justify-between items-start p-3 bg-surface-50 border border-surface-100 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={task.completed === 1}
+                            onChange={(): void =>
+                              handleToggleTask(task.id!, task.completed === 1)
+                            }
+                            className="mt-1 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+                          />
+                          <div>
+                            <strong
+                              className={`text-surface-800 ${
+                                task.completed === 1 ? "line-through opacity-60" : ""
+                              }`}
+                            >
+                              {task.title}
+                            </strong>
+                            {task.description && (
+                              <div className="text-sm text-surface-500 mt-0.5">
+                                {task.description}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </label>
                       </div>
-                      <button
-                        onClick={() => handleDeleteTask(task.id!)}
-                        style={{ ...styles.smallButton, background: "#dc3545" }}
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={(): void => handleDeleteTask(task.id!)}
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   ))
                 )}
               </div>
             </>
           ) : (
-            <p style={{ color: "#999" }}>Select a user to view their tasks</p>
+            <p className="text-surface-500">Select a user to view their tasks</p>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-    fontFamily: "Inter, sans-serif",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "20px",
-    marginTop: "20px",
-  },
-  section: {
-    background: "#fff",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    padding: "20px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    marginBottom: "20px",
-  },
-  input: {
-    padding: "8px 12px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    fontSize: "14px",
-    fontFamily: "inherit",
-  },
-  button: {
-    padding: "10px 16px",
-    background: "#28a745",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500",
-  },
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  listItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: "12px",
-    background: "#f9f9f9",
-    border: "1px solid #eee",
-    borderRadius: "4px",
-  },
-  actions: {
-    display: "flex",
-    gap: "8px",
-  },
-  smallButton: {
-    padding: "6px 10px",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: "500",
-  },
-  error: {
-    padding: "12px",
-    background: "#f8d7da",
-    color: "#721c24",
-    borderRadius: "4px",
-    marginBottom: "20px",
-  },
-  loadingOverlay: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "12px",
-    padding: "16px",
-    background: "#e7f3ff",
-    borderRadius: "4px",
-    marginBottom: "20px",
-    color: "#007bff",
-    fontWeight: "500",
-  },
-  loadingSpinner: {
-    width: "20px",
-    height: "20px",
-    border: "2px solid #007bff",
-    borderTopColor: "transparent",
-    borderRadius: "50%",
-    animation: "spin 0.8s linear infinite",
-  },
-};
