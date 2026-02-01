@@ -1,3 +1,7 @@
+/**
+ * This is a demo component that showcases the UI components and the color palette in the template
+ */
+
 import { useState, type ReactElement } from "react";
 import { Button } from "../ui/Button";
 import { Card, CardHeader } from "../ui/Card";
@@ -31,17 +35,19 @@ export function ThemeShowcase(): ReactElement {
           <Card>
             <CardHeader title="Primary" description="Professional Blue" />
             <div className="space-y-2">
-              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
-                <div key={shade} className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-8 rounded bg-primary-${shade}`}
-                    style={{
-                      backgroundColor: `var(--color-primary-${shade}, oklch(var(--primary-${shade})))`,
-                    }}
-                  />
-                  <span className="text-sm text-surface-600">{shade}</span>
-                </div>
-              ))}
+              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(
+                (shade) => (
+                  <div key={shade} className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-8 rounded bg-primary-${shade}`}
+                      style={{
+                        backgroundColor: `var(--color-primary-${shade}, oklch(var(--primary-${shade})))`,
+                      }}
+                    />
+                    <span className="text-sm text-surface-600">{shade}</span>
+                  </div>
+                ),
+              )}
             </div>
           </Card>
 
@@ -49,17 +55,19 @@ export function ThemeShowcase(): ReactElement {
           <Card>
             <CardHeader title="Accent" description="Teal" />
             <div className="space-y-2">
-              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
-                <div key={shade} className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-8 rounded bg-accent-${shade}`}
-                    style={{
-                      backgroundColor: `var(--color-accent-${shade}, oklch(var(--accent-${shade})))`,
-                    }}
-                  />
-                  <span className="text-sm text-surface-600">{shade}</span>
-                </div>
-              ))}
+              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(
+                (shade) => (
+                  <div key={shade} className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-8 rounded bg-accent-${shade}`}
+                      style={{
+                        backgroundColor: `var(--color-accent-${shade}, oklch(var(--accent-${shade})))`,
+                      }}
+                    />
+                    <span className="text-sm text-surface-600">{shade}</span>
+                  </div>
+                ),
+              )}
             </div>
           </Card>
 
@@ -67,17 +75,19 @@ export function ThemeShowcase(): ReactElement {
           <Card>
             <CardHeader title="Surface" description="Neutral" />
             <div className="space-y-2">
-              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
-                <div key={shade} className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-8 rounded border border-surface-200 bg-surface-${shade}`}
-                    style={{
-                      backgroundColor: `var(--color-surface-${shade}, oklch(var(--surface-${shade})))`,
-                    }}
-                  />
-                  <span className="text-sm text-surface-600">{shade}</span>
-                </div>
-              ))}
+              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(
+                (shade) => (
+                  <div key={shade} className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-8 rounded border border-surface-200 bg-surface-${shade}`}
+                      style={{
+                        backgroundColor: `var(--color-surface-${shade}, oklch(var(--surface-${shade})))`,
+                      }}
+                    />
+                    <span className="text-sm text-surface-600">{shade}</span>
+                  </div>
+                ),
+              )}
             </div>
           </Card>
         </div>
@@ -105,13 +115,20 @@ export function ThemeShowcase(): ReactElement {
 
       {/* Buttons */}
       <section>
-        <h2 className="text-2xl font-semibold text-surface-800 mb-6">Buttons</h2>
+        <h2 className="text-2xl font-semibold text-surface-800 mb-6">
+          Buttons
+        </h2>
         <Card>
-          <CardHeader title="Button Variants" description="Different styles for different contexts" />
+          <CardHeader
+            title="Button Variants"
+            description="Different styles for different contexts"
+          />
           <div className="space-y-6">
             {/* Variants */}
             <div>
-              <h4 className="text-sm font-medium text-surface-600 mb-3">Variants</h4>
+              <h4 className="text-sm font-medium text-surface-600 mb-3">
+                Variants
+              </h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="primary">Primary</Button>
                 <Button variant="secondary">Secondary</Button>
@@ -123,7 +140,9 @@ export function ThemeShowcase(): ReactElement {
 
             {/* Sizes */}
             <div>
-              <h4 className="text-sm font-medium text-surface-600 mb-3">Sizes</h4>
+              <h4 className="text-sm font-medium text-surface-600 mb-3">
+                Sizes
+              </h4>
               <div className="flex flex-wrap items-center gap-3">
                 <Button size="sm">Small</Button>
                 <Button size="md">Medium</Button>
@@ -133,7 +152,9 @@ export function ThemeShowcase(): ReactElement {
 
             {/* States */}
             <div>
-              <h4 className="text-sm font-medium text-surface-600 mb-3">States</h4>
+              <h4 className="text-sm font-medium text-surface-600 mb-3">
+                States
+              </h4>
               <div className="flex flex-wrap gap-3">
                 <Button disabled>Disabled</Button>
                 <Button loading>Loading</Button>
@@ -148,7 +169,10 @@ export function ThemeShowcase(): ReactElement {
         <h2 className="text-2xl font-semibold text-surface-800 mb-6">Cards</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card variant="default">
-            <CardHeader title="Default Card" description="Standard card with border" />
+            <CardHeader
+              title="Default Card"
+              description="Standard card with border"
+            />
             <p className="text-surface-600">
               This is the default card variant with a subtle border.
             </p>
@@ -160,7 +184,10 @@ export function ThemeShowcase(): ReactElement {
             </p>
           </Card>
           <Card variant="outlined">
-            <CardHeader title="Outlined Card" description="Transparent background" />
+            <CardHeader
+              title="Outlined Card"
+              description="Transparent background"
+            />
             <p className="text-surface-600">
               This card has only an outline with a transparent background.
             </p>
@@ -170,11 +197,17 @@ export function ThemeShowcase(): ReactElement {
 
       {/* Inputs */}
       <section>
-        <h2 className="text-2xl font-semibold text-surface-800 mb-6">Form Inputs</h2>
+        <h2 className="text-2xl font-semibold text-surface-800 mb-6">
+          Form Inputs
+        </h2>
         <Card>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <Input label="Email" type="email" placeholder="Enter your email" />
+              <Input
+                label="Email"
+                type="email"
+                placeholder="Enter your email"
+              />
               <Input
                 label="Password"
                 type="password"
@@ -208,7 +241,10 @@ export function ThemeShowcase(): ReactElement {
       <section>
         <h2 className="text-2xl font-semibold text-surface-800 mb-6">Badges</h2>
         <Card>
-          <CardHeader title="Badge Variants" description="Labels and status indicators" />
+          <CardHeader
+            title="Badge Variants"
+            description="Labels and status indicators"
+          />
           <div className="flex flex-wrap gap-3">
             <Badge variant="default">Default</Badge>
             <Badge variant="primary">Primary</Badge>
@@ -263,12 +299,17 @@ export function ThemeShowcase(): ReactElement {
         <Card>
           <div className="space-y-4">
             <h1 className="text-4xl font-bold text-surface-900">Heading 1</h1>
-            <h2 className="text-3xl font-semibold text-surface-800">Heading 2</h2>
-            <h3 className="text-2xl font-semibold text-surface-700">Heading 3</h3>
+            <h2 className="text-3xl font-semibold text-surface-800">
+              Heading 2
+            </h2>
+            <h3 className="text-2xl font-semibold text-surface-700">
+              Heading 3
+            </h3>
             <h4 className="text-xl font-medium text-surface-700">Heading 4</h4>
             <p className="text-base text-surface-600">
-              Body text - Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              Body text - Lorem ipsum dolor sit amet, consectetur adipiscing
+              elit. Sed do eiusmod tempor incididunt ut labore et dolore magna
+              aliqua.
             </p>
             <p className="text-sm text-surface-500">
               Small text - Used for captions, helper text, and secondary
@@ -283,7 +324,9 @@ export function ThemeShowcase(): ReactElement {
 
       {/* Shadows */}
       <section>
-        <h2 className="text-2xl font-semibold text-surface-800 mb-6">Shadows</h2>
+        <h2 className="text-2xl font-semibold text-surface-800 mb-6">
+          Shadows
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-white rounded-xl shadow-soft text-center">
             <span className="text-surface-700 font-medium">Soft Shadow</span>
@@ -303,7 +346,10 @@ export function ThemeShowcase(): ReactElement {
           Animations
         </h2>
         <Card>
-          <CardHeader title="Animation Previews" description="Hover to trigger animations" />
+          <CardHeader
+            title="Animation Previews"
+            description="Hover to trigger animations"
+          />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 bg-surface-100 rounded-lg text-center animate-fade-in">
               <span className="text-surface-700">Fade In</span>

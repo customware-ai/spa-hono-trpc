@@ -4,7 +4,7 @@ A full-stack React Router application with SQLite database integration, featurin
 
 **This is a template** demonstrating best practices and project structure—not a live application. Use it as a starting point for new projects.
 
-> **Required reading**: Review [CLAUDE.md](./CLAUDE.md) before development for coding patterns, commands, and project conventions.
+> **Required reading**: Review [AGENTS.md](./AGENTS.md) before development for coding patterns, commands, and project conventions.
 
 ## Features
 
@@ -19,16 +19,16 @@ A full-stack React Router application with SQLite database integration, featurin
 
 ## Tech Stack
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| react-router | 7.13.0 | Full-stack React framework |
-| vite | 8.0.0-beta.10 | Build tool |
-| tailwindcss | 4.1.18 | Styling |
-| zod | 4.3.6 | Schema validation |
-| neverthrow | 8.2.0 | Type-safe error handling |
-| vitest | 4.0.x | Testing framework |
-| oxlint | 1.x | Type-aware linting |
-| sql.js | 1.13.0 | SQLite in JavaScript |
+| Package      | Version       | Purpose                    |
+| ------------ | ------------- | -------------------------- |
+| react-router | 7.13.0        | Full-stack React framework |
+| vite         | 8.0.0-beta.10 | Build tool                 |
+| tailwindcss  | 4.1.18        | Styling                    |
+| zod          | 4.3.6         | Schema validation          |
+| neverthrow   | 8.2.0         | Type-safe error handling   |
+| vitest       | 4.0.x         | Testing framework          |
+| oxlint       | 1.x           | Type-aware linting         |
+| sql.js       | 1.13.0        | SQLite in JavaScript       |
 
 ## Getting Started
 
@@ -55,7 +55,7 @@ npm run start
 npm run check
 ```
 
-## Project Structure
+## Project Structure (initial template)
 
 ```
 app/
@@ -131,14 +131,17 @@ Reusable components in `app/components/ui/`:
 The database persists to `database.db` in the project root.
 
 **On startup:**
+
 - If `database.db` exists, it's loaded into memory
 - If not, a new database is created with tables
 
 **On mutations:**
+
 - Every create/update/delete calls `saveDatabase()`
 - Data survives server restarts
 
 **To reset:**
+
 ```bash
 rm database.db
 npm run dev
@@ -182,6 +185,7 @@ npm run check
 ### Test Coverage
 
 Tests cover:
+
 - UI components (Button, Card, Input, Badge, Alert)
 - Database CRUD operations
 - API routes (loaders and actions)
@@ -190,15 +194,15 @@ Tests cover:
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run typecheck` | TypeScript type checking |
-| `npm run lint` | Type-aware linting with oxlint |
-| `npm test` | Run all tests |
-| `npm run check` | Run typecheck, lint, build, and test |
+| Script              | Description                          |
+| ------------------- | ------------------------------------ |
+| `npm run dev`       | Start development server             |
+| `npm run build`     | Production build                     |
+| `npm run start`     | Start production server              |
+| `npm run typecheck` | TypeScript type checking             |
+| `npm run lint`      | Type-aware linting with oxlint       |
+| `npm test`          | Run all tests                        |
+| `npm run check`     | Run typecheck, lint, build, and test |
 
 ---
 
