@@ -1,3 +1,10 @@
+/**
+ * Tests for Database Layer
+ *
+ * Tests the core database functionality including table creation,
+ * CRUD operations, and data persistence using sql.js.
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js';
 
@@ -11,24 +18,13 @@ async function getTestDatabase(): Promise<{ db: Database; SQL: SqlJsStatic }> {
   }
   if (!testDb) {
     testDb = new testSQL.Database();
-    // Initialize tables
+    // Initialize a simple test table
     testDb.run(`
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE IF NOT EXISTS test_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
+        value INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    testDb.run(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT,
-        completed BOOLEAN DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
       )
     `);
   }
@@ -37,10 +33,8 @@ async function getTestDatabase(): Promise<{ db: Database; SQL: SqlJsStatic }> {
 
 function resetTestDatabase(): void {
   if (testDb) {
-    testDb.run('DELETE FROM tasks');
-    testDb.run('DELETE FROM users');
-    testDb.run("DELETE FROM sqlite_sequence WHERE name='users'");
-    testDb.run("DELETE FROM sqlite_sequence WHERE name='tasks'");
+    testDb.run('DELETE FROM test_data');
+    testDb.run("DELETE FROM sqlite_sequence WHERE name='test_data'");
   }
 }
 
@@ -54,189 +48,84 @@ describe('Database Operations', () => {
     resetTestDatabase();
   });
 
-  describe('User CRUD Operations', () => {
-    it('should create a user', async () => {
+  describe('Basic CRUD Operations', () => {
+    it('should create a record', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['John Doe', 'john@example.com']);
-      const result = db.exec("SELECT * FROM users WHERE email = 'john@example.com'");
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Test Item', 42]);
+      const result = db.exec("SELECT * FROM test_data WHERE name = 'Test Item'");
 
       expect(result).toHaveLength(1);
       expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('John Doe');
-      expect(result[0].values[0][2]).toBe('john@example.com');
+      expect(result[0].values[0][1]).toBe('Test Item');
+      expect(result[0].values[0][2]).toBe(42);
     });
 
-    it('should get all users', async () => {
+    it('should read all records', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['User 1', 'user1@example.com']);
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['User 2', 'user2@example.com']);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Item 1', 10]);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Item 2', 20]);
 
-      const result = db.exec("SELECT * FROM users ORDER BY id");
+      const result = db.exec("SELECT * FROM test_data ORDER BY id");
 
       expect(result[0].values).toHaveLength(2);
     });
 
-    it('should get a single user by id', async () => {
+    it('should read a single record by id', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['Test User', 'test@example.com']);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Single Item', 100]);
 
-      const result = db.exec("SELECT * FROM users WHERE id = 1");
+      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
 
-      expect(result[0].values[0][1]).toBe('Test User');
+      expect(result[0].values[0][1]).toBe('Single Item');
+      expect(result[0].values[0][2]).toBe(100);
     });
 
-    it('should update a user', async () => {
+    it('should update a record', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['Old Name', 'old@example.com']);
-      db.run("UPDATE users SET name = ?, email = ? WHERE id = ?", ['New Name', 'new@example.com', 1]);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Old Name', 50]);
+      db.run("UPDATE test_data SET name = ?, value = ? WHERE id = ?", ['New Name', 60, 1]);
 
-      const result = db.exec("SELECT * FROM users WHERE id = 1");
+      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
 
       expect(result[0].values[0][1]).toBe('New Name');
-      expect(result[0].values[0][2]).toBe('new@example.com');
+      expect(result[0].values[0][2]).toBe(60);
     });
 
-    it('should delete a user', async () => {
+    it('should delete a record', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['To Delete', 'delete@example.com']);
-      db.run("DELETE FROM users WHERE id = 1");
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['To Delete', 99]);
+      db.run("DELETE FROM test_data WHERE id = 1");
 
-      const result = db.exec("SELECT * FROM users WHERE id = 1");
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should not allow duplicate emails', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['User 1', 'same@example.com']);
-
-      expect(() => {
-        db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['User 2', 'same@example.com']);
-      }).toThrow();
-    });
-
-    it('should return empty array when no users exist', async () => {
-      const { db } = await getTestDatabase();
-      const result = db.exec("SELECT * FROM users");
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should return null for non-existent user', async () => {
-      const { db } = await getTestDatabase();
-      const result = db.exec("SELECT * FROM users WHERE id = 999");
+      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
 
       expect(result).toHaveLength(0);
     });
   });
 
-  describe('Task CRUD Operations', () => {
-    beforeEach(async () => {
+  describe('Query Results', () => {
+    it('should return empty array when no records exist', async () => {
       const { db } = await getTestDatabase();
-      // Create a test user for task operations
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['Test User', 'test@example.com']);
+      const result = db.exec("SELECT * FROM test_data");
+
+      expect(result).toHaveLength(0);
     });
 
-    it('should create a task', async () => {
+    it('should return null for non-existent record', async () => {
       const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Test Task', 'Description']);
+      const result = db.exec("SELECT * FROM test_data WHERE id = 999");
 
-      const result = db.exec("SELECT * FROM tasks WHERE user_id = 1");
+      expect(result).toHaveLength(0);
+    });
+
+    it('should filter records by condition', async () => {
+      const { db } = await getTestDatabase();
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['High Value', 100]);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Low Value', 10]);
+
+      const result = db.exec("SELECT * FROM test_data WHERE value > 50");
 
       expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][2]).toBe('Test Task');
-    });
-
-    it('should get tasks for a user', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Task 1', 'Desc 1']);
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Task 2', 'Desc 2']);
-
-      const result = db.exec("SELECT * FROM tasks WHERE user_id = 1");
-
-      expect(result[0].values).toHaveLength(2);
-    });
-
-    it('should get a single task by id', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Single Task', 'Desc']);
-
-      const result = db.exec("SELECT * FROM tasks WHERE id = 1");
-
-      expect(result[0].values[0][2]).toBe('Single Task');
-    });
-
-    it('should update task completion status', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Task', 'Desc']);
-      db.run("UPDATE tasks SET completed = ? WHERE id = ?", [1, 1]);
-
-      const result = db.exec("SELECT * FROM tasks WHERE id = 1");
-
-      expect(result[0].values[0][4]).toBe(1); // completed column
-    });
-
-    it('should update task title and description', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Old Title', 'Old Desc']);
-      db.run("UPDATE tasks SET title = ?, description = ? WHERE id = ?", ['New Title', 'New Desc', 1]);
-
-      const result = db.exec("SELECT * FROM tasks WHERE id = 1");
-
-      expect(result[0].values[0][2]).toBe('New Title');
-      expect(result[0].values[0][3]).toBe('New Desc');
-    });
-
-    it('should delete a task', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'To Delete', 'Desc']);
-      db.run("DELETE FROM tasks WHERE id = 1");
-
-      const result = db.exec("SELECT * FROM tasks WHERE id = 1");
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should delete all tasks when user is deleted', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Task 1', 'Desc']);
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'Task 2', 'Desc']);
-
-      db.run("DELETE FROM tasks WHERE user_id = 1");
-      db.run("DELETE FROM users WHERE id = 1");
-
-      const result = db.exec("SELECT * FROM tasks WHERE user_id = 1");
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should return empty array when user has no tasks', async () => {
-      const { db } = await getTestDatabase();
-      const result = db.exec("SELECT * FROM tasks WHERE user_id = 1");
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should group tasks by user_id', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO users (name, email) VALUES (?, ?)", ['User 2', 'user2@example.com']);
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'User 1 Task', 'Desc']);
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [2, 'User 2 Task', 'Desc']);
-
-      const user1Tasks = db.exec("SELECT * FROM tasks WHERE user_id = 1");
-      const user2Tasks = db.exec("SELECT * FROM tasks WHERE user_id = 2");
-
-      expect(user1Tasks[0].values).toHaveLength(1);
-      expect(user2Tasks[0].values).toHaveLength(1);
-    });
-
-    it('should create task with default completed status of 0', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)", [1, 'New Task', 'Desc']);
-
-      const result = db.exec("SELECT completed FROM tasks WHERE id = 1");
-
-      expect(result[0].values[0][0]).toBe(0);
+      expect(result[0].values[0][1]).toBe('High Value');
     });
   });
 
@@ -247,6 +136,107 @@ describe('Database Operations', () => {
 
       expect(exported).toBeInstanceOf(Uint8Array);
       expect(exported.length).toBeGreaterThan(0);
+    });
+
+    it('should export and import database data', async () => {
+      const { db, SQL } = await getTestDatabase();
+
+      // Add data
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Export Test', 123]);
+
+      // Export
+      const exported = db.export();
+
+      // Create new database from exported data
+      const importedDb = new SQL.Database(exported);
+      const result = importedDb.exec("SELECT * FROM test_data WHERE name = 'Export Test'");
+
+      expect(result[0].values[0][1]).toBe('Export Test');
+      expect(result[0].values[0][2]).toBe(123);
+
+      importedDb.close();
+    });
+  });
+
+  describe('Parameterized Queries', () => {
+    it('should handle parameterized inserts', async () => {
+      const { db } = await getTestDatabase();
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Param Test', 456]);
+
+      const result = db.exec("SELECT * FROM test_data WHERE name = 'Param Test'");
+
+      expect(result[0].values[0][2]).toBe(456);
+    });
+
+    it('should prevent SQL injection via parameters', async () => {
+      const { db } = await getTestDatabase();
+      const maliciousInput = "'; DROP TABLE test_data; --";
+
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", [maliciousInput, 1]);
+
+      // Table should still exist and contain the literal string
+      const result = db.exec("SELECT * FROM test_data");
+      expect(result[0].values).toHaveLength(1);
+      expect(result[0].values[0][1]).toBe(maliciousInput);
+    });
+  });
+
+  describe('Transaction Support', () => {
+    it('should support manual transactions', async () => {
+      const { db } = await getTestDatabase();
+
+      db.run("BEGIN TRANSACTION");
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item 1', 10]);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item 2', 20]);
+      db.run("COMMIT");
+
+      const result = db.exec("SELECT * FROM test_data");
+
+      expect(result[0].values).toHaveLength(2);
+    });
+
+    it('should rollback failed transactions', async () => {
+      const { db } = await getTestDatabase();
+
+      db.run("BEGIN TRANSACTION");
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item', 10]);
+      db.run("ROLLBACK");
+
+      const result = db.exec("SELECT * FROM test_data");
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('Schema Validation', () => {
+    it('should enforce NOT NULL constraint', async () => {
+      const { db } = await getTestDatabase();
+
+      expect(() => {
+        db.run("INSERT INTO test_data (value) VALUES (?)", [100]);
+      }).toThrow();
+    });
+
+    it('should auto-increment primary key', async () => {
+      const { db } = await getTestDatabase();
+
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['First', 1]);
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Second', 2]);
+
+      const result = db.exec("SELECT id FROM test_data ORDER BY id");
+
+      expect(result[0].values[0][0]).toBe(1);
+      expect(result[0].values[1][0]).toBe(2);
+    });
+
+    it('should set default timestamp', async () => {
+      const { db } = await getTestDatabase();
+
+      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Timestamp Test', 1]);
+
+      const result = db.exec("SELECT created_at FROM test_data WHERE id = 1");
+
+      expect(result[0].values[0][0]).toBeTruthy(); // Should have a timestamp
     });
   });
 });

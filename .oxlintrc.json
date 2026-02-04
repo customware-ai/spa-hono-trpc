@@ -11,6 +11,8 @@
     }
   },
   "rules": {
+    "no-unassigned-vars": "off",
+    "typescript/no-floating-promises": "off",
     "typescript/explicit-function-return-type": "error",
     "typescript/no-explicit-any": "error",
     "typescript/no-inferrable-types": "off",

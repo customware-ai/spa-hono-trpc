@@ -4,24 +4,28 @@
 :root {
   --page-bg: #f8fafc;
   --text-color: #0f172a;
-  --muted-text: #475569;
+  --muted-text: #64748b;
   --border-color: #e2e8f0;
   --card-bg: #ffffff;
-  --link-color: #1d4ed8;
-  --link-hover-color: #1e40af;
-  --link-bg-hover: rgba(30, 64, 175, 0.08);
+  --link-color: #047857;
+  --link-hover-color: #059669;
+  --link-bg-hover: rgba(5, 150, 105, 0.08);
+  --primary: #10b981;
+  --primary-hover: #059669;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --page-bg: #020617;
     --text-color: #e2e8f0;
-    --muted-text: #cbd5f5;
-    --border-color: #374151;
+    --muted-text: #94a3b8;
+    --border-color: #334155;
     --card-bg: #0f172a;
-    --link-color: #3b82f6;
-    --link-hover-color: #60a5fa;
-    --link-bg-hover: rgba(96, 165, 250, 0.12);
+    --link-color: #34d399;
+    --link-hover-color: #6ee7b7;
+    --link-bg-hover: rgba(52, 211, 153, 0.12);
+    --primary: #10b981;
+    --primary-hover: #34d399;
   }
 }
 
@@ -37,13 +41,15 @@ body {
   background: var(--page-bg);
   color: var(--text-color);
   font-family:
-    "Inter",
+    "Work Sans",
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .home-page {

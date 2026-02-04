@@ -68,3 +68,13 @@ export interface LoaderData {
   tasks: Record<number, SqlValue[][]>;
   error?: string;
 }
+
+// ============================================================
+// Export Sales & CRM Schemas
+// ============================================================
+export * from './sales';
+
+// ============================================================
+// Export Accounting & Finance Schemas
+// ============================================================
+export * from './accounting';
