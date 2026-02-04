@@ -46,7 +46,7 @@ export async function loader({ request: _request }: LoaderFunctionArgs): Promise
       {
         id: 1,
         quote_number: "QT-000001",
-        customer_name: "Acme Corp",
+        customer_name: "Sample Customer A",
         issue_date: "2024-02-01",
         expiry_date: "2024-03-01",
         total: 5240.00,
@@ -55,7 +55,7 @@ export async function loader({ request: _request }: LoaderFunctionArgs): Promise
       {
         id: 2,
         quote_number: "QT-000002",
-        customer_name: "TechStart Inc",
+        customer_name: "Sample Customer B",
         issue_date: "2024-02-05",
         expiry_date: "2024-03-05",
         total: 12890.00,

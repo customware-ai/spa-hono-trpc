@@ -1,3 +1,17 @@
+/**
+ * Sample ERP Schema Migration
+ *
+ * This demonstrates a complete ERP database schema with:
+ * - Sales & CRM tables (customers, leads, quotes, orders)
+ * - Accounting tables (chart of accounts, invoices, payments, journal entries)
+ * - Proper foreign key relationships
+ * - Sample seed data
+ *
+ * Use as reference when designing your application's schema.
+ *
+ * @customware-ai/template-code
+ */
+
 export const migration001 = {
   id: 1,
   name: "Create ERP schema (Sales, CRM, Accounting)",

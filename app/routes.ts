@@ -1,3 +1,16 @@
+/**
+ * Route Configuration - Sample Structure
+ *
+ * Demonstrates organizing routes for a multi-module application:
+ * - Module-based prefixes (sales, accounting)
+ * - RESTful patterns for CRUD operations
+ * - Nested routes for detail views
+ *
+ * Customize this structure for your application's navigation.
+ *
+ * @see https://reactrouter.com/start/framework/routing
+ */
+
 import { type RouteConfig, index, route, prefix } from "@react-router/dev/routes";
 
 export default [

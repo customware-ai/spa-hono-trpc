@@ -1,6 +1,6 @@
-# Simple ERP System
+# Template for React Router App with Tailwind CSS and SQLite
 
-A professional Enterprise Resource Planning (ERP) system built with React Router v7, TypeScript, Tailwind CSS, and sql.js. Features Sales & CRM and Accounting modules with industrial, modern design.
+This is a template with coding patterns and styles for a production app. It demos a production app professional Enterprise Resource Planning (ERP) system built with React Router v7, TypeScript, Tailwind CSS, and sql.js. Features Sales & CRM and Accounting modules with industrial, modern design.
 
 > **Required reading**: Review [AGENTS.md](./AGENTS.md) before development for coding patterns, commands, and project conventions.
 
@@ -17,16 +17,16 @@ A professional Enterprise Resource Planning (ERP) system built with React Router
 
 ## Tech Stack
 
-| Package      | Version        | Purpose                    |
-| ------------ | -------------- | -------------------------- |
-| react-router | 7.13.0         | Full-stack React framework |
-| vite         | 8.0.0-beta.12  | Build tool                 |
-| tailwindcss  | 4.1.18         | Styling                    |
-| zod          | 4.3.6          | Schema validation          |
-| neverthrow   | 8.2.0          | Type-safe error handling   |
-| vitest       | 4.0.x          | Testing framework          |
-| oxlint       | 1.x            | Type-aware linting         |
-| sql.js       | 1.13.0         | SQLite in JavaScript       |
+| Package      | Version       | Purpose                    |
+| ------------ | ------------- | -------------------------- |
+| react-router | 7.13.0        | Full-stack React framework |
+| vite         | 8.0.0-beta.12 | Build tool                 |
+| tailwindcss  | 4.1.18        | Styling                    |
+| zod          | 4.3.6         | Schema validation          |
+| neverthrow   | 8.2.0         | Type-safe error handling   |
+| vitest       | 4.0.x         | Testing framework          |
+| oxlint       | 1.x           | Type-aware linting         |
+| sql.js       | 1.13.0        | SQLite in JavaScript       |
 
 ## 🎨 Design
 
@@ -153,6 +153,7 @@ const { db } = await getDatabase();
 ```
 
 **NEVER:**
+
 - Import better-sqlite3
 - Write to filesystem directly
 - Bypass db.ts
@@ -272,7 +273,6 @@ All tests use Vitest and React Testing Library.
 
 - **README.md** - This file (project overview)
 - **AGENTS.md** - Agent coordination and development patterns
-- **CLAUDE.md** - Legacy reference (see AGENTS.md instead)
 - Code comments throughout codebase
 
 ## 🚦 Type Safety

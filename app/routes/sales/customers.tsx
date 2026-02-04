@@ -8,6 +8,8 @@
  * - Sortable columns
  * - Click row to view customer details
  * - "New Customer" button to create new records
+ *
+ * @template-code Sample route demonstrating loader/action patterns
  */
 
 import type { ReactElement, JSX } from "react";

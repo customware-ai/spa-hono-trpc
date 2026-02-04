@@ -1,3 +1,13 @@
+/**
+ * Database Layer - TEMPLATE CODE
+ *
+ * This is sample code from Customware AI demonstrating sql.js database
+ * patterns with file persistence. Shows CRUD operations, transaction handling,
+ * and proper cleanup.
+ *
+ * Customize this for your application's specific data access needs.
+ */
+
 import initSqlJs, {
   type Database,
   type SqlJsStatic,

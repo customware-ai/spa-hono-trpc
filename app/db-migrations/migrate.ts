@@ -1,5 +1,10 @@
 /**
- * Database Migration System
+ * Migration System - TEMPLATE CODE
+ *
+ * Sample database migration runner demonstrating version tracking,
+ * backup creation, and incremental schema updates.
+ *
+ * Part of Customware AI template - customize for your schema needs.
  *
  * This module provides migration functionality using the existing db.ts infrastructure.
  * All database operations go through db.ts to ensure consistency and proper file persistence.

@@ -123,11 +123,11 @@ export function TopBar({ breadcrumbs = [] }: TopBarProps): ReactElement {
               className="flex items-center gap-3 px-3 py-2 hover:bg-surface-50 rounded-lg transition-colors"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                JD
+                CA
               </div>
               <div className="text-left hidden lg:block">
-                <div className="text-sm font-semibold text-surface-900">John Doe</div>
-                <div className="text-xs text-surface-500">Administrator</div>
+                <div className="text-sm font-semibold text-surface-900">Demo User</div>
+                <div className="text-xs text-surface-500">Sample Account</div>
               </div>
               <svg className="w-4 h-4 text-surface-400 hidden lg:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -139,8 +139,8 @@ export function TopBar({ breadcrumbs = [] }: TopBarProps): ReactElement {
                 <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                 <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-strong border border-surface-200 z-50 overflow-hidden animate-scale-in">
                   <div className="p-3 border-b border-surface-200">
-                    <div className="font-medium text-sm text-surface-900">John Doe</div>
-                    <div className="text-xs text-surface-500">john@company.com</div>
+                    <div className="font-medium text-sm text-surface-900">Demo User</div>
+                    <div className="text-xs text-surface-500">demo@customware.ai</div>
                   </div>
                   <div className="p-2">
                     <Link

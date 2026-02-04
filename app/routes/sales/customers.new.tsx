@@ -117,7 +117,7 @@ export default function NewCustomerPage(): ReactElement {
                     name="company_name"
                     type="text"
                     required
-                    placeholder="Acme Corporation"
+                    placeholder="Sample Company Inc"
                   />
                   {actionData?.fieldErrors?.company_name && (
                     <p className="mt-1 text-sm text-red-600">
@@ -133,7 +133,7 @@ export default function NewCustomerPage(): ReactElement {
                   <Input
                     name="contact_name"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Jane Sample"
                   />
                 </div>
 
@@ -163,7 +163,7 @@ export default function NewCustomerPage(): ReactElement {
                   <Input
                     name="email"
                     type="email"
-                    placeholder="contact@acme.com"
+                    placeholder="contact@sample-company.com"
                   />
                 </div>
 

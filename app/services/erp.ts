@@ -1,7 +1,19 @@
 /**
- * ERP Database Layer
+ * ERP Service Layer - SAMPLE IMPLEMENTATION
  *
- * This module provides CRUD operations for all ERP entities:
+ * This module demonstrates business logic patterns for an ERP system.
+ * It shows how to:
+ * - Organize service functions by domain
+ * - Use Result pattern for error handling
+ * - Implement CRUD operations with validation
+ * - Structure database queries
+ *
+ * This is example code from Customware AI - adapt the patterns to your
+ * specific business requirements.
+ *
+ * @module services/erp
+ *
+ * Provides CRUD operations for all ERP entities:
  * - Sales & CRM: Customers, Leads, Opportunities, Quotes, Sales Orders, Activities
  * - Accounting: Invoices, Payments, Journal Entries, Chart of Accounts, Ledger
  *
@@ -189,8 +201,8 @@ export async function getCustomerById(id: number): Promise<Result<Customer | nul
  *
  * @example
  * const result = await createCustomer({
- *   company_name: "Acme Corp",
- *   email: "contact@acme.com",
+ *   company_name: "Sample Company",
+ *   email: "contact@sample-company.com",
  *   payment_terms: 30
  * });
  */

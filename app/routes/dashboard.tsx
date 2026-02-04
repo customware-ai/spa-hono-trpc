@@ -65,11 +65,11 @@ interface InvoiceData extends Record<string, unknown> {
 }
 
 const recentInvoices: InvoiceData[] = [
-  { id: "INV-001", customer: "Acme Corp", amount: "$5,240", status: "paid", date: "2024-02-01" },
-  { id: "INV-002", customer: "TechStart Inc", amount: "$12,890", status: "pending", date: "2024-02-02" },
-  { id: "INV-003", customer: "Global Solutions", amount: "$3,450", status: "sent", date: "2024-02-03" },
-  { id: "INV-004", customer: "Innovation Labs", amount: "$8,920", status: "paid", date: "2024-02-04" },
-  { id: "INV-005", customer: "Future Systems", amount: "$15,600", status: "pending", date: "2024-02-05" },
+  { id: "INV-001", customer: "Sample Corp A", amount: "$5,240", status: "paid", date: "2024-02-01" },
+  { id: "INV-002", customer: "Sample Corp B", amount: "$12,890", status: "pending", date: "2024-02-02" },
+  { id: "INV-003", customer: "Sample Corp C", amount: "$3,450", status: "sent", date: "2024-02-03" },
+  { id: "INV-004", customer: "Sample Corp D", amount: "$8,920", status: "paid", date: "2024-02-04" },
+  { id: "INV-005", customer: "Sample Corp E", amount: "$15,600", status: "pending", date: "2024-02-05" },
 ];
 
 const invoiceColumns: Column<InvoiceData>[] = [

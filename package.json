@@ -1,6 +1,7 @@
 {
   "name": "react-app-db",
   "private": true,
+  "description": "Template React Router ERP application demonstrating coding patterns and architectural best practices from Customware AI",
   "type": "module",
   "scripts": {
     "build": "react-router build",

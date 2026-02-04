@@ -146,9 +146,9 @@ export function Sidebar(): ReactElement {
           {!collapsed && (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">S</span>
+                <span className="text-white font-bold text-sm">C</span>
               </div>
-              <span className="text-white font-semibold text-lg tracking-tight">SimpleERP</span>
+              <span className="text-white font-semibold text-lg tracking-tight">Customware AI ERP Template</span>
             </div>
           )}
           <button
