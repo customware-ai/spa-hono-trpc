@@ -1,13 +1,3 @@
-/**
- * Database Layer - TEMPLATE CODE
- *
- * This is sample code from Customware AI demonstrating sql.js database
- * patterns with file persistence. Shows CRUD operations, transaction handling,
- * and proper cleanup.
- *
- * Customize this for your application's specific data access needs.
- */
-
 import initSqlJs, {
   type Database,
   type SqlJsStatic,
@@ -111,7 +101,7 @@ export async function getDatabase(): Promise<{
 
 // User CRUD operations
 export async function createUser(
-  data: unknown
+  data: unknown,
 ): Promise<Result<SqlValue[] | null, DatabaseError | ValidationError[]>> {
   const validated = validate(CreateUserSchema, data);
   if (validated.isErr()) {
@@ -140,7 +130,7 @@ export async function createUser(
 
 export async function createUserDirect(
   name: string,
-  email: string
+  email: string,
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -177,7 +167,7 @@ export async function getUsers(): Promise<Result<SqlValue[][], DatabaseError>> {
 }
 
 export async function getUser(
-  id: number
+  id: number,
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -198,7 +188,7 @@ export async function getUser(
 export async function updateUser(
   id: number,
   name: string,
-  email: string
+  email: string,
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -223,7 +213,7 @@ export async function updateUser(
 }
 
 export async function deleteUser(
-  id: number
+  id: number,
 ): Promise<Result<{ success: boolean }, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -242,7 +232,7 @@ export async function deleteUser(
 
 // Task CRUD operations
 export async function createTask(
-  data: unknown
+  data: unknown,
 ): Promise<Result<SqlValue[] | null, DatabaseError | ValidationError[]>> {
   const validated = validate(CreateTaskSchema, data);
   if (validated.isErr()) {
@@ -276,7 +266,7 @@ export async function createTask(
 export async function createTaskDirect(
   userId: number,
   title: string,
-  description: string = ""
+  description: string = "",
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -301,7 +291,7 @@ export async function createTaskDirect(
 }
 
 export async function getTasks(
-  userId: number
+  userId: number,
 ): Promise<Result<SqlValue[][], DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -320,7 +310,7 @@ export async function getTasks(
 }
 
 export async function getTask(
-  id: number
+  id: number,
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -370,7 +360,7 @@ export async function updateTask(
   id: number,
   title?: string,
   description?: string,
-  completed?: boolean
+  completed?: boolean,
 ): Promise<Result<SqlValue[] | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
@@ -403,7 +393,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(
-  id: number
+  id: number,
 ): Promise<Result<{ success: boolean }, DatabaseError>> {
   try {
     const { db } = await getDatabase();

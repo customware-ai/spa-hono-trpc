@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactElement } from 'react';
+import clsx from "clsx";
 
 type BadgeVariant =
   | 'default'
@@ -32,7 +33,7 @@ export function Badge({
 
   return (
     <span
-      className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      className={clsx(baseStyles, variantStyles[variant], className)}
       {...props}
     >
       {children}

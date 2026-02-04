@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ok, err } from 'neverthrow';
-import { createLoaderArgs, createActionArgs } from '../helpers';
+import { createLoaderArgs, createActionArgs } from '../../helpers';
 import type { Customer } from '~/schemas';
 
 // Mock the ERP service module
@@ -32,7 +32,7 @@ vi.mock('~/utils/json', () => ({
   },
 }));
 
-import { loader, action } from '~/routes/api.sales.customers';
+import { loader, action } from '~/routes/api/sales.customers';
 import * as erp from '~/services/erp';
 
 function createRequest(method: string, url: string, body?: Record<string, string>): Request {

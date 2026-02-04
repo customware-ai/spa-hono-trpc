@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import clsx from "clsx";
 
 export type Status =
   | "draft"
@@ -105,10 +106,16 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-semibold rounded-full ${styles.bg} ${styles.text} ${sizeStyle.padding} ${sizeStyle.text}`}
+      className={clsx(
+        "inline-flex items-center gap-1.5 font-semibold rounded-full",
+        styles.bg,
+        styles.text,
+        sizeStyle.padding,
+        sizeStyle.text
+      )}
     >
       {showDot && (
-        <span className={`${sizeStyle.dot} ${styles.dot} rounded-full`} />
+        <span className={clsx(sizeStyle.dot, styles.dot, "rounded-full")} />
       )}
       {displayLabel}
     </span>

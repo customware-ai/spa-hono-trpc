@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, ReactElement, TextareaHTMLAttributes } from 'react';
+import clsx from "clsx";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -39,7 +40,7 @@ export function Input({
       )}
       <input
         id={inputId}
-        className={`${baseStyles} ${errorStyles} ${className}`}
+        className={clsx(baseStyles, errorStyles, className)}
         {...props}
       />
       {error && <p className="mt-1.5 text-sm text-danger">{error}</p>}
@@ -77,7 +78,7 @@ export function Textarea({
       )}
       <textarea
         id={inputId}
-        className={`${baseStyles} ${errorStyles} ${className}`}
+        className={clsx(baseStyles, errorStyles, className)}
         {...props}
       />
       {error && <p className="mt-1.5 text-sm text-danger">{error}</p>}

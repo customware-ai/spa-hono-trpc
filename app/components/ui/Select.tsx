@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { useState, useRef, useEffect } from "react";
+import clsx from "clsx";
 
 interface Option {
   label: string;
@@ -82,23 +83,24 @@ export function Select({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between px-4 py-2.5 bg-white border rounded-lg text-left transition-all ${
+        className={clsx(
+          "w-full flex items-center justify-between px-4 py-2.5 bg-white border rounded-lg text-left transition-all",
           error
             ? "border-danger focus:ring-2 focus:ring-danger/20"
-            : "border-surface-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-        } ${
+            : "border-surface-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20",
           disabled
             ? "bg-surface-50 text-surface-400 cursor-not-allowed"
             : "hover:border-surface-400"
-        }`}
+        )}
       >
         <span className={selectedOption ? "text-surface-900" : "text-surface-500"}>
           {selectedOption?.label || placeholder}
         </span>
         <svg
-          className={`w-5 h-5 text-surface-400 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={clsx(
+            "w-5 h-5 text-surface-400 transition-transform",
+            isOpen && "rotate-180"
+          )}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -141,11 +143,13 @@ export function Select({
                   type="button"
                   onClick={() => !option.disabled && handleSelect(option.value)}
                   disabled={option.disabled}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                  className={clsx(
+                    "w-full text-left px-4 py-2.5 text-sm transition-colors",
                     option.value === value
                       ? "bg-primary-50 text-primary-700 font-medium"
-                      : "text-surface-900 hover:bg-surface-50"
-                  } ${option.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      : "text-surface-900 hover:bg-surface-50",
+                    option.disabled && "opacity-50 cursor-not-allowed"
+                  )}
                 >
                   <div className="flex items-center justify-between">
                     <span>{option.label}</span>

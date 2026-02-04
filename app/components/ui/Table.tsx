@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
+import clsx from "clsx";
 
 export interface Column<T> {
   key: string;
@@ -133,20 +134,22 @@ export function Table<T extends Record<string, unknown>>({
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`px-6 py-4 text-left text-xs font-semibold text-surface-600 uppercase tracking-wider ${
-                      column.sortable ? "cursor-pointer select-none hover:text-surface-900" : ""
-                    } ${column.className || ""}`}
+                    className={clsx(
+                      "px-6 py-4 text-left text-xs font-semibold text-surface-600 uppercase tracking-wider",
+                      column.sortable && "cursor-pointer select-none hover:text-surface-900",
+                      column.className
+                    )}
                     onClick={() => column.sortable && handleSort(column.key)}
                   >
                     <div className="flex items-center gap-2">
                       {column.label}
                       {column.sortable && (
                         <svg
-                          className={`w-4 h-4 transition-transform ${
-                            sortColumn === column.key && sortDirection === "desc"
-                              ? "rotate-180"
-                              : ""
-                          } ${sortColumn === column.key ? "text-primary-600" : "text-surface-400"}`}
+                          className={clsx(
+                            "w-4 h-4 transition-transform",
+                            sortColumn === column.key && sortDirection === "desc" && "rotate-180",
+                            sortColumn === column.key ? "text-primary-600" : "text-surface-400"
+                          )}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -172,9 +175,11 @@ export function Table<T extends Record<string, unknown>>({
                   <tr
                     key={rowKey}
                     onClick={() => onRowClick?.(row)}
-                    className={`transition-colors ${
-                      onRowClick ? "cursor-pointer hover:bg-surface-50" : ""
-                    } ${isSelected ? "bg-primary-50" : ""}`}
+                    className={clsx(
+                      "transition-colors",
+                      onRowClick && "cursor-pointer hover:bg-surface-50",
+                      isSelected && "bg-primary-50"
+                    )}
                   >
                     {selectable && (
                       <td className="px-6 py-4">
@@ -190,7 +195,7 @@ export function Table<T extends Record<string, unknown>>({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`px-6 py-4 text-sm text-surface-900 ${column.className || ""}`}
+                        className={clsx("px-6 py-4 text-sm text-surface-900", column.className)}
                       >
                         {column.render
                           ? column.render(row[column.key], row)
@@ -234,11 +239,12 @@ export function Table<T extends Record<string, unknown>>({
                     <button
                       key={page}
                       onClick={() => pagination.onPageChange(page)}
-                      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={clsx(
+                        "px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                         isCurrent
                           ? "bg-primary-600 text-white"
                           : "text-surface-700 bg-white border border-surface-300 hover:bg-surface-50"
-                      }`}
+                      )}
                     >
                       {page}
                     </button>

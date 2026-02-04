@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactElement, ReactNode } from 'react';
+import clsx from "clsx";
 
 type AlertVariant = 'info' | 'success' | 'warning' | 'danger';
 
@@ -70,7 +71,7 @@ export function Alert({
 
   return (
     <div
-      className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      className={clsx(baseStyles, variantStyles[variant], className)}
       role="alert"
       {...props}
     >

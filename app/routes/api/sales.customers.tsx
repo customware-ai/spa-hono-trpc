@@ -18,9 +18,9 @@ import {
   createCustomer,
   updateCustomer,
   deleteCustomer,
-} from "../services/erp";
-import { CreateCustomerSchema, UpdateCustomerSchema } from "../schemas";
-import { json } from "../utils/json";
+} from "../../services/erp";
+import { CreateCustomerSchema, UpdateCustomerSchema } from "../../schemas";
+import { json } from "../../utils/json";
 
 /**
  * GET /api/sales/customers

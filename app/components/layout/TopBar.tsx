@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useState } from "react";
 import type { ReactElement } from "react";
+import clsx from "clsx";
 
 interface Breadcrumb {
   label: string;
@@ -9,15 +10,19 @@ interface Breadcrumb {
 
 interface TopBarProps {
   breadcrumbs?: Breadcrumb[];
+  sidebarCollapsed?: boolean;
 }
 
-export function TopBar({ breadcrumbs = [] }: TopBarProps): ReactElement {
+export function TopBar({ breadcrumbs = [], sidebarCollapsed = false }: TopBarProps): ReactElement {
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 right-0 left-64 h-16 bg-white border-b border-surface-200 z-30 transition-all duration-300">
+    <header className={clsx(
+      "fixed top-0 right-0 h-16 bg-white border-b border-surface-200 z-30 transition-all duration-300",
+      sidebarCollapsed ? "left-16" : "left-64"
+    )}>
       <div className="h-full flex items-center justify-between px-6">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm">

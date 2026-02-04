@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactElement, ReactNode } from 'react';
+import clsx from "clsx";
 
 type CardVariant = 'default' | 'elevated' | 'outlined';
 
@@ -27,7 +28,7 @@ export function Card({
   const baseStyles = 'rounded-xl p-5';
 
   return (
-    <div className={`${baseStyles} ${variantStyles[variant]} ${className}`} {...props}>
+    <div className={clsx(baseStyles, variantStyles[variant], className)} {...props}>
       {children}
     </div>
   );
@@ -43,7 +44,7 @@ export function CardHeader({
 }: CardHeaderProps): ReactElement {
   return (
     <div
-      className={`flex items-start justify-between mb-4 pb-3 border-b border-surface-100 ${className}`}
+      className={clsx("flex items-start justify-between mb-4 pb-3 border-b border-surface-100", className)}
       {...props}
     >
       <div>

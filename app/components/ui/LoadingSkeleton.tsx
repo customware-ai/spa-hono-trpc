@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import clsx from "clsx";
 
 interface LoadingSkeletonProps {
   variant?: "text" | "card" | "table-row" | "circle";
@@ -19,7 +20,7 @@ export function LoadingSkeleton({
         {skeletons.map((i) => (
           <div
             key={i}
-            className={`h-4 bg-surface-200 rounded animate-pulse ${className}`}
+            className={clsx("h-4 bg-surface-200 rounded animate-pulse", className)}
             style={{ width: `${Math.random() * 30 + 70}%` }}
           />
         ))}
@@ -33,7 +34,7 @@ export function LoadingSkeleton({
         {skeletons.map((i) => (
           <div
             key={i}
-            className={`w-12 h-12 bg-surface-200 rounded-full animate-pulse ${className}`}
+            className={clsx("w-12 h-12 bg-surface-200 rounded-full animate-pulse", className)}
           />
         ))}
       </>
@@ -69,7 +70,7 @@ export function LoadingSkeleton({
       {skeletons.map((i) => (
         <div
           key={i}
-          className={`bg-white border border-surface-200 rounded-xl p-6 ${className}`}
+          className={clsx("bg-white border border-surface-200 rounded-xl p-6", className)}
         >
           <div className="space-y-4">
             <div className="flex items-center gap-4">

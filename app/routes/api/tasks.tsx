@@ -5,11 +5,11 @@ import {
   getTask,
   updateTask,
   deleteTask,
-} from '../db';
-import { createApiResponse } from '../utils/api';
-import { validate } from '../utils/validate';
-import { CreateTaskSchema } from '../schemas';
-import { logger } from '../utils/logger';
+} from '../../db';
+import { createApiResponse } from '../../utils/api';
+import { validate } from '../../utils/validate';
+import { CreateTaskSchema } from '../../schemas';
+import { logger } from '../../utils/logger';
 
 export async function loader({ request }: LoaderFunctionArgs): Promise<Response> {
   if (request.method !== 'GET') {

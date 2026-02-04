@@ -11,7 +11,12 @@
  * @see https://reactrouter.com/start/framework/routing
  */
 
-import { type RouteConfig, index, route, prefix } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  route,
+  prefix,
+} from "@react-router/dev/routes";
 
 export default [
   // Main dashboard
@@ -34,8 +39,13 @@ export default [
     route("reports", "routes/accounting/reports.tsx"),
   ]),
 
-  // Legacy demo and API routes
+  // Demo route
   route("demo", "routes/home.tsx"),
-  route("api/users", "routes/api.users.tsx"),
-  route("api/tasks", "routes/api.tasks.tsx"),
+
+  // API routes
+  ...prefix("api", [
+    route("users", "routes/api/users.tsx"),
+    route("tasks", "routes/api/tasks.tsx"),
+    route("sales/customers", "routes/api/sales.customers.tsx"),
+  ]),
 ] satisfies RouteConfig;

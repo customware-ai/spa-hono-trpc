@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useEffect } from "react";
+import clsx from "clsx";
 
 interface ModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export function Modal({
 
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-2xl shadow-strong w-full ${sizeClasses[size]} animate-scale-in`}
+        className={clsx("relative bg-white rounded-2xl shadow-strong w-full animate-scale-in", sizeClasses[size])}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

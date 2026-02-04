@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import clsx from "clsx";
 
 interface Tab {
   label: string;
@@ -33,21 +34,23 @@ export function Tabs({
               <button
                 key={tab.value}
                 onClick={() => onTabChange(tab.value)}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                className={clsx(
+                  "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                   isActive
                     ? "bg-white text-surface-900 shadow-sm"
                     : "text-surface-600 hover:text-surface-900"
-                }`}
+                )}
               >
                 {tab.icon}
                 {tab.label}
                 {tab.badge !== undefined && (
                   <span
-                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    className={clsx(
+                      "px-2 py-0.5 text-xs font-semibold rounded-full",
                       isActive
                         ? "bg-primary-100 text-primary-700"
                         : "bg-surface-200 text-surface-600"
-                    }`}
+                    )}
                   >
                     {tab.badge}
                   </span>
@@ -73,21 +76,23 @@ export function Tabs({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => onTabChange(tab.value)}
-                className={`relative flex items-center gap-2 pb-4 px-1 text-sm font-semibold transition-colors ${
+                className={clsx(
+                  "relative flex items-center gap-2 pb-4 px-1 text-sm font-semibold transition-colors",
                   isActive
                     ? "text-primary-600"
                     : "text-surface-600 hover:text-surface-900"
-                }`}
+                )}
               >
                 {tab.icon}
                 {tab.label}
                 {tab.badge !== undefined && (
                   <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    className={clsx(
+                      "px-2 py-0.5 text-xs font-medium rounded-full",
                       isActive
                         ? "bg-primary-100 text-primary-700"
                         : "bg-surface-100 text-surface-600"
-                    }`}
+                    )}
                   >
                     {tab.badge}
                   </span>

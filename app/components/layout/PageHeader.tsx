@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import clsx from "clsx";
 
 interface Tab {
   label: string;
@@ -56,20 +57,22 @@ export function PageHeader({
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => onTabChange?.(tab.value)}
-                  className={`relative pb-4 px-1 text-sm font-semibold transition-colors ${
+                  className={clsx(
+                    "relative pb-4 px-1 text-sm font-semibold transition-colors",
                     isActive
                       ? "text-primary-600"
                       : "text-surface-600 hover:text-surface-900"
-                  }`}
+                  )}
                 >
                   <span className="flex items-center gap-2">
                     {tab.label}
                     {tab.count !== undefined && (
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                      <span className={clsx(
+                        "px-2 py-0.5 text-xs font-medium rounded-full",
                         isActive
                           ? "bg-primary-100 text-primary-700"
                           : "bg-surface-100 text-surface-600"
-                      }`}>
+                      )}>
                         {tab.count}
                       </span>
                     )}
