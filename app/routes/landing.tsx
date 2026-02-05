@@ -242,58 +242,22 @@ export default function LandingPage(): ReactElement {
 
       {/* Bottom Decoration - Industrial Stripes - Light Mode */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-1 flex overflow-hidden dark:hidden"
+        className="absolute bottom-0 left-0 right-0 h-1 dark:hidden animate-stripe-move"
+        style={{
+          background:
+            "repeating-linear-gradient(90deg, #18181b 0px, #18181b 20px, #fafafa 20px, #fafafa 40px)",
+        }}
         aria-hidden="true"
-      >
-        <div
-          className="flex-1 animate-stripe-move"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #18181b 0px, #18181b 20px, #fafafa 20px, #fafafa 40px)",
-          }}
-        />
-        <div
-          className="flex-1 animate-stripe-move [animation-delay:-0.5s]"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #71717a 0px, #71717a 20px, #fafafa 20px, #fafafa 40px)",
-          }}
-        />
-        <div
-          className="flex-1 animate-stripe-move [animation-delay:-1s]"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #18181b 0px, #18181b 20px, #fafafa 20px, #fafafa 40px)",
-          }}
-        />
-      </div>
+      />
       {/* Bottom Decoration - Industrial Stripes - Dark Mode */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-1 hidden dark:flex overflow-hidden"
+        className="absolute bottom-0 left-0 right-0 h-1 hidden dark:block animate-stripe-move"
+        style={{
+          background:
+            "repeating-linear-gradient(90deg, #fafafa 0px, #fafafa 20px, #09090b 20px, #09090b 40px)",
+        }}
         aria-hidden="true"
-      >
-        <div
-          className="flex-1 animate-stripe-move"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #fafafa 0px, #fafafa 20px, #09090b 20px, #09090b 40px)",
-          }}
-        />
-        <div
-          className="flex-1 animate-stripe-move [animation-delay:-0.5s]"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #a1a1aa 0px, #a1a1aa 20px, #09090b 20px, #09090b 40px)",
-          }}
-        />
-        <div
-          className="flex-1 animate-stripe-move [animation-delay:-1s]"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, #fafafa 0px, #fafafa 20px, #09090b 20px, #09090b 40px)",
-          }}
-        />
-      </div>
+      />
     </div>
   );
 }

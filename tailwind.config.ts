@@ -142,8 +142,8 @@ export default {
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         stripeMove: {
-          from: { transform: 'translateX(-50%)' },
-          to: { transform: 'translateX(0%)' },
+          from: { backgroundPosition: '0 0' },
+          to: { backgroundPosition: '40px 0' },
         },
       },
     },
