@@ -31,8 +31,8 @@ This codebase follows strict architectural patterns and coding standards:
 ### 4. **Testing Requirements**
 - All business logic must have tests
 - All UI components must have tests
-- While working on a task, run the narrowest relevant check(s) after you modify code/test files (e.g. `npm run typecheck` after changing TypeScript/React code, `npm test` after updating tests). No need to run checks for non-code-only changes (e.g. updating Markdown/docs, copy, comments, or other non-executable content). If unsure, run the narrowest relevant check.
-- Run `npm run check` once at the very end of the task (right before marking it complete) to verify there are no issues
+- Run checks only at the very end of the task (right before marking it complete). Run the narrowest relevant check based on what changed (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated). No need to run checks for non-code-only changes (e.g. updating Markdown/docs, copy, comments, or other non-executable content).
+- Run `npm run check` at the very end only when multiple areas are updated and full validation is needed
 - Test coverage is mandatory, not optional
 
 ### 5. **Code Quality Standards**
@@ -173,8 +173,8 @@ export default function CustomersPage(): ReactElement {
    - Run `npm test` to verify all tests pass
 
 3. **Validation Before Completion**
-   - While working on a task, run focused validation as you go for code/test changes (e.g. `npm run typecheck` after code changes, `npm test` after test changes, `npm run lint` after refactors). Skip checks for non-code-only changes (e.g. Markdown/docs, copy, comments, or other non-executable content). If unsure, run the narrowest relevant check.
-   - At the very end of the task (right before marking it complete), run `npm run check`
+   - Run checks only at the very end of the task (right before marking it complete). Use focused validation based on the scope of changes (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated, `npm run lint` for lint-focused refactors). Skip checks for non-code-only changes (e.g. Markdown/docs, copy, comments, or other non-executable content).
+   - Run `npm run check` at the very end only when multiple areas are updated
    - This runs: typecheck + lint + build + test
    - ALL checks must pass before considering task complete
    - Fix any errors before moving to next task
@@ -617,8 +617,8 @@ Tasks are in `/workspace/development/.agent/tasks/` as markdown files:
 1. **Check for tasks**: `ls /workspace/development/.agent/tasks/`
 2. **If empty**: You're done - stop working
 3. **If tasks exist**: Read first file (alphabetically)
-4. **Execute**: Follow instructions in file (run appropriate focused checks while you work; skip checks for non-code changes like Markdown/docs)
-5. **Verify**: Run `npm run check` (only at the very end of the task)
+4. **Execute**: Follow instructions in file
+5. **Verify**: At the very end of the task, run the narrowest relevant check for what changed (e.g. `npm run typecheck` for type-only changes, `npm test` for test updates), and run `npm run check` only when multiple areas were updated
 6. **Complete**: Call `task_complete` (this deletes the file)
 7. **Loop**: Return to step 1
 
@@ -634,7 +634,7 @@ Re-read files anytime especially when the conversation is compacted:
 
 - Always call task_complete - never delete task files manually
 - One task at a time - complete before starting next
-- Run appropriate focused checks while working, and verify with `npm run check` only at the very end (before completing)
+- Run checks only at the very end of each task: use the narrowest relevant check for scoped changes, and use `npm run check` only when multiple areas were updated
 - No need to run checks for docs-only/non-code-only updates (e.g. Markdown/docs, copy, comments, or other non-executable content)
 - **NEVER stop working until `/workspace/development/.agent/tasks/` is empty**
 - If you feel the conversation is getting long, do NOT summarize and stop - keep executing tasks
