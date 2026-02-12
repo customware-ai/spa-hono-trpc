@@ -11,13 +11,15 @@ export default defineConfig({
     exclude: ["sql.js"],
   },
   build: {
-    rolldownOptions: {
-      output: {
-        manualChunks(id: string): string | undefined {
-          if (id.includes("sql.js")) {
-            return "sqljs";
-          }
-          return undefined;
+    minify: "oxc",
+  },
+  environments: {
+    ssr: {
+      build: {
+        rolldownOptions: {
+          output: {
+            codeSplitting: false,
+          },
         },
       },
     },
