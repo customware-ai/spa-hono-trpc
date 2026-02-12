@@ -39,7 +39,10 @@ async function main(): Promise<void> {
 }
 
 // Run migrations if this script is executed directly
-if (require.main === module) {
+import { fileURLToPath } from "url";
+
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
   void main();
 }
 
