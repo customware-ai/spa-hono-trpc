@@ -50,14 +50,13 @@ export default [
     route("invoices", "routes/accounting/invoices.tsx"),
     route("payments", "routes/accounting/payments.tsx"),
     route("accounts", "routes/accounting/accounts.tsx"),
-    route("reports", "routes/accounting/reports.tsx"),
   ]),
 
+  route("settings", "routes/settings.tsx"),
 
   // API routes
   ...prefix("api", [
     route("users", "routes/api/users.tsx"),
-    route("tasks", "routes/api/tasks.tsx"),
     route("sales/customers", "routes/api/sales.customers.tsx"),
   ]),
 ] satisfies RouteConfig;
