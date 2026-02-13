@@ -1,6 +1,6 @@
-import { env } from '../config/env';
-
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+const DEFAULT_LOG_LEVEL: LogLevel = 'info';
 
 const levelPriority: Record<LogLevel, number> = {
   debug: 0,
@@ -10,7 +10,7 @@ const levelPriority: Record<LogLevel, number> = {
 };
 
 function shouldLog(level: LogLevel): boolean {
-  return levelPriority[level] >= levelPriority[env.LOG_LEVEL];
+  return levelPriority[level] >= levelPriority[DEFAULT_LOG_LEVEL];
 }
 
 function formatMessage(
