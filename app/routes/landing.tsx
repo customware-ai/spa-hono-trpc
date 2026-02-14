@@ -1,5 +1,4 @@
 import type { ReactElement } from "react";
-import { Link } from "react-router";
 
 export default function LandingPage(): ReactElement {
   return (
@@ -54,27 +53,6 @@ export default function LandingPage(): ReactElement {
           </strong>{" "}
           has built.
         </p>
-
-        {/* CTA Button */}
-        <Link
-          to="/dashboard"
-          className="group inline-flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-black text-lg font-medium rounded-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-500/10 active:scale-[0.98]"
-        >
-          Explore Demo
-          <svg
-            className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
-        </Link>
       </main>
 
       {/* Footer */}

@@ -6,13 +6,11 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 
 export default function SettingsPage(): ReactElement {
   const [currency, setCurrency] = useState("USD");
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const navigate = useNavigate();
 
   // Toggle dark mode function
   const toggleDarkMode = (): void => {
@@ -116,42 +114,11 @@ export default function SettingsPage(): ReactElement {
           </div>
         </Card>
 
-        {/* Database Info */}
-        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/10 dark:border-amber-900/20">
-          <h3 className="text-lg font-bold text-amber-900 dark:text-amber-400 mb-4 tracking-tight flex items-center gap-2">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            System Information
-          </h3>
-          <div className="space-y-2 text-sm text-amber-800 dark:text-amber-500/80">
-            <p>
-              <span className="font-semibold">Database:</span> SQLite (sql.js)
-            </p>
-            <p>
-              <span className="font-semibold">Persistence:</span> local
-              database.db
-            </p>
-            <p>
-              <span className="font-semibold">Environment:</span> Development
-            </p>
-          </div>
-        </Card>
-
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Cancel
-          </Button>
+          <Link to="/">
+            <Button variant="outline">Cancel</Button>
+          </Link>
+
           <Button variant="primary">Save Changes</Button>
         </div>
       </div>
