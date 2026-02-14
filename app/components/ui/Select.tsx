@@ -1,3 +1,4 @@
+import { ChevronDown, Check } from "lucide-react";
 import type { ReactElement } from "react";
 import { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
@@ -96,22 +97,12 @@ export function Select({
         <span className={selectedOption ? "text-surface-900 dark:text-surface-100" : "text-surface-500 dark:text-surface-400"}>
           {selectedOption?.label || placeholder}
         </span>
-        <svg
+        <ChevronDown
           className={clsx(
             "w-5 h-5 text-surface-400 transition-transform",
             isOpen && "rotate-180"
           )}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        />
       </button>
 
       {error && <p className="mt-1 text-sm text-danger">{error}</p>}
@@ -154,19 +145,7 @@ export function Select({
                   <div className="flex items-center justify-between">
                     <span>{option.label}</span>
                     {option.value === value && (
-                      <svg
-                        className="w-5 h-5 text-primary-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                      <Check className="w-5 h-5 text-primary-600" />
                     )}
                   </div>
                 </button>

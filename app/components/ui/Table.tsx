@@ -1,3 +1,4 @@
+import { ArrowUp } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 import clsx from "clsx";
@@ -144,23 +145,13 @@ export function Table<T extends Record<string, unknown>>({
                     <div className="flex items-center gap-2">
                       {column.label}
                       {column.sortable && (
-                        <svg
+                        <ArrowUp
                           className={clsx(
                             "w-4 h-4 transition-transform",
                             sortColumn === column.key && sortDirection === "desc" && "rotate-180",
                             sortColumn === column.key ? "text-primary-600" : "text-surface-400"
                           )}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 11l5-5m0 0l5 5m-5-5v12"
-                          />
-                        </svg>
+                        />
                       )}
                     </div>
                   </th>

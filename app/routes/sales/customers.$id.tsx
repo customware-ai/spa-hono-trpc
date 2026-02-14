@@ -13,6 +13,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { ShoppingBag, DollarSign, Activity, FileText, Users } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Card } from "../../components/ui/Card";
@@ -134,9 +135,7 @@ export default function CustomerDetailPage(): ReactElement {
                   <p className="text-2xl font-bold text-surface-900 mt-1">0</p>
                 </div>
                 <div className="p-3 bg-primary-50 rounded-lg">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
+                  <ShoppingBag className="w-6 h-6 text-primary-600" />
                 </div>
               </div>
             </Card>
@@ -148,9 +147,7 @@ export default function CustomerDetailPage(): ReactElement {
                   <p className="text-2xl font-bold text-surface-900 mt-1">$0</p>
                 </div>
                 <div className="p-3 bg-amber-50 rounded-lg">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
+                  <Activity className="w-6 h-6 text-amber-600" />
                 </div>
               </div>
             </Card>
@@ -162,9 +159,7 @@ export default function CustomerDetailPage(): ReactElement {
                   <p className="text-2xl font-bold text-surface-900 mt-1">$0</p>
                 </div>
                 <div className="p-3 bg-primary-50 rounded-lg">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
+                  <DollarSign className="w-6 h-6 text-primary-600" />
                 </div>
               </div>
             </Card>
@@ -179,9 +174,7 @@ export default function CustomerDetailPage(): ReactElement {
       content: (
         <Card>
           <div className="text-center py-12">
-            <svg className="w-16 h-16 text-surface-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <Users className="w-16 h-16 text-surface-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-surface-900 mb-2">No Contacts Yet</h3>
             <p className="text-surface-600">Contacts feature not available in template</p>
           </div>
@@ -195,9 +188,7 @@ export default function CustomerDetailPage(): ReactElement {
       content: (
         <Card>
           <div className="text-center py-12">
-            <svg className="w-16 h-16 text-surface-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+            <ShoppingBag className="w-16 h-16 text-surface-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-surface-900 mb-2">No Orders Yet</h3>
             <p className="text-surface-600">Orders feature not available in template</p>
           </div>
@@ -211,9 +202,7 @@ export default function CustomerDetailPage(): ReactElement {
       content: (
         <Card>
           <div className="text-center py-12">
-            <svg className="w-16 h-16 text-surface-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <FileText className="w-16 h-16 text-surface-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-surface-900 mb-2">No Activities Yet</h3>
             <p className="text-surface-600">Activities feature not available in template</p>
           </div>
