@@ -79,7 +79,7 @@ export default function QuotesPage(): ReactElement {
       label: "Quote #",
       sortable: true,
       render: (value: unknown): JSX.Element => (
-        <span className="font-mono font-semibold text-surface-900">{value as string}</span>
+        <span className="font-mono font-semibold text-surface-900 dark:text-surface-100">{value as string}</span>
       ),
     },
     {
@@ -104,7 +104,7 @@ export default function QuotesPage(): ReactElement {
       label: "Total",
       sortable: true,
       render: (value: unknown): JSX.Element => (
-        <span className="font-semibold text-surface-900">
+        <span className="font-semibold text-surface-900 dark:text-surface-100">
           ${(value as number).toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </span>
       ),
@@ -146,6 +146,7 @@ export default function QuotesPage(): ReactElement {
             placeholder="Search by quote number or customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="dark:bg-surface-900"
           />
         </div>
         <div className="w-full sm:w-48">
@@ -190,14 +191,14 @@ export default function QuotesPage(): ReactElement {
       {/* Summary */}
       {filteredQuotes.length > 0 && (
         <div className="mt-6 flex items-center justify-between text-sm">
-          <div className="text-surface-600">
-            Showing <span className="font-semibold text-surface-900">{filteredQuotes.length}</span>{" "}
-            of <span className="font-semibold text-surface-900">{quotes.length}</span> quotes
+          <div className="text-surface-600 dark:text-surface-400">
+            Showing <span className="font-semibold text-surface-900 dark:text-surface-100">{filteredQuotes.length}</span>{" "}
+            of <span className="font-semibold text-surface-900 dark:text-surface-100">{quotes.length}</span> quotes
           </div>
           <div className="flex items-center gap-6">
-            <div>
+            <div className="dark:text-surface-400">
               Total Value:{" "}
-              <span className="font-semibold text-surface-900">
+              <span className="font-semibold text-surface-900 dark:text-surface-100">
                 ${filteredQuotes.reduce((sum: number, q: Quote): number => sum + q.total, 0).toLocaleString()}
               </span>
             </div>

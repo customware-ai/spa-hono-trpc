@@ -73,8 +73,3 @@ export interface LoaderData {
 // Export Sales & CRM Schemas
 // ============================================================
 export * from './sales';
-
-// ============================================================
-// Export Accounting & Finance Schemas
-// ============================================================
-export * from './accounting';

@@ -45,18 +45,11 @@ export default [
     route("quotes", "routes/sales/quotes.tsx"),
   ]),
 
-  // Accounting routes
-  ...prefix("accounting", [
-    route("invoices", "routes/accounting/invoices.tsx"),
-    route("payments", "routes/accounting/payments.tsx"),
-    route("accounts", "routes/accounting/accounts.tsx"),
-  ]),
-
   route("settings", "routes/settings.tsx"),
 
   // API routes
   ...prefix("api", [
-    route("users", "routes/api/users.tsx"),
-    route("sales/customers", "routes/api/sales.customers.tsx"),
+    route("users", "routes/api/users.ts"),
+    route("sales/customers", "routes/api/sales.customers.ts"),
   ]),
 ] satisfies RouteConfig;

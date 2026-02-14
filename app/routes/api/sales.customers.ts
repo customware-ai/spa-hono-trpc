@@ -56,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<Response>
  * PUT /api/sales/customers/:id - Update existing customer
  * DELETE /api/sales/customers/:id - Delete customer
  */
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs): Promise<Response> {
   const method = request.method;
 
   try {

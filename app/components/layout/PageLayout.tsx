@@ -3,7 +3,6 @@ import type { ReactElement, ReactNode } from "react";
 import clsx from "clsx";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
-import { TemplateBanner } from "../ui/TemplateBanner";
 
 interface Breadcrumb {
   label: string;
@@ -15,7 +14,10 @@ interface PageLayoutProps {
   breadcrumbs?: Breadcrumb[];
 }
 
-export function PageLayout({ children, breadcrumbs }: PageLayoutProps): ReactElement {
+export function PageLayout({
+  children,
+  breadcrumbs,
+}: PageLayoutProps): ReactElement {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
@@ -44,18 +46,20 @@ export function PageLayout({ children, breadcrumbs }: PageLayoutProps): ReactEle
         aria-hidden="true"
       />
 
-      <TemplateBanner />
-      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
       <TopBar breadcrumbs={breadcrumbs} sidebarCollapsed={sidebarCollapsed} />
 
       {/* Main Content Area */}
-      <main className={clsx(
-        "relative pt-[5.5rem] min-h-screen transition-all duration-300",
-        sidebarCollapsed ? "ml-16" : "ml-64"
-      )}>
-        <div className="p-6 animate-fade-in">
-          {children}
-        </div>
+      <main
+        className={clsx(
+          "relative pt-20 min-h-screen transition-all duration-300",
+          sidebarCollapsed ? "ml-16" : "ml-64",
+        )}
+      >
+        <div className="p-6 animate-fade-in">{children}</div>
       </main>
     </div>
   );

@@ -81,13 +81,13 @@ function KanbanColumn({
 }): ReactElement {
   return (
     <div className="flex-1 min-w-[300px]">
-      <div className="bg-surface-50 rounded-lg p-4">
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-lg p-4">
         {/* Column Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${color}`} />
-            <h3 className="font-semibold text-surface-900">{title}</h3>
-            <span className="px-2 py-0.5 text-xs font-semibold bg-surface-200 text-surface-700 rounded-full">
+            <h3 className="font-semibold text-surface-900 dark:text-surface-100">{title}</h3>
+            <span className="px-2 py-0.5 text-xs font-semibold bg-surface-200 dark:bg-surface-800 text-surface-700 dark:text-surface-300 rounded-full">
               {count}
             </span>
           </div>
@@ -97,18 +97,18 @@ function KanbanColumn({
         <div className="space-y-3">
           {leads.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-surface-500">No leads in this stage</p>
+              <p className="text-sm text-surface-500 dark:text-surface-400">No leads in this stage</p>
             </div>
           ) : (
             leads.map((lead) => (
               <Card key={lead.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <h4 className="font-semibold text-surface-900 mb-1">{lead.company_name}</h4>
-                <p className="text-sm text-surface-600 mb-2">{lead.contact_name}</p>
+                <h4 className="font-semibold text-surface-900 dark:text-surface-100 mb-1">{lead.company_name}</h4>
+                <p className="text-sm text-surface-600 dark:text-surface-400 mb-2">{lead.contact_name}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-primary-600">
+                  <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
                     ${lead.estimated_value.toLocaleString()}
                   </span>
-                  <span className="text-xs text-surface-500">{lead.probability}%</span>
+                  <span className="text-xs text-surface-500 dark:text-surface-400">{lead.probability}%</span>
                 </div>
               </Card>
             ))
@@ -144,25 +144,25 @@ export default function LeadsPage(): ReactElement {
         title="Leads (Demo Data)"
         description="Manage your sales pipeline and track lead progress."
         actions={
-          <div className="flex items-center gap-1 bg-surface-100 p-1 rounded-lg">
+          <div className="flex items-center gap-1 bg-surface-100 dark:bg-surface-800 p-1 rounded-lg">
             <button
               onClick={() => setViewMode("kanban")}
               className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                 viewMode === "kanban"
-                  ? "bg-white text-surface-900 shadow-sm"
-                  : "text-surface-600 hover:text-surface-900"
+                  ? "bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 shadow-sm"
+                  : "text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 00-2 2" />
               </svg>
             </button>
             <button
               onClick={() => setViewMode("list")}
               className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                 viewMode === "list"
-                  ? "bg-white text-surface-900 shadow-sm"
-                  : "text-surface-600 hover:text-surface-900"
+                  ? "bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 shadow-sm"
+                  : "text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,14 +202,14 @@ export default function LeadsPage(): ReactElement {
 
       {/* Pipeline Summary */}
       <Card className="mt-6">
-        <h3 className="text-lg font-semibold text-surface-900 mb-4">Pipeline Summary</h3>
+        <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">Pipeline Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {columns.map((column) => {
             const count = leadsByStatus[column.key as keyof typeof leadsByStatus]?.length || 0;
             return (
               <div key={column.key} className="text-center">
-                <div className="text-2xl font-bold text-surface-900">{count}</div>
-                <div className="text-sm text-surface-600">{column.title}</div>
+                <div className="text-2xl font-bold text-surface-900 dark:text-surface-100">{count}</div>
+                <div className="text-sm text-surface-600 dark:text-surface-400">{column.title}</div>
               </div>
             );
           })}

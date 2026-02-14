@@ -105,12 +105,12 @@ export default function NewCustomerPage(): ReactElement {
           <div className="space-y-8">
             {/* Company Information */}
             <div>
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
                 Company Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Company Name <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -127,7 +127,7 @@ export default function NewCustomerPage(): ReactElement {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Contact Name
                   </label>
                   <Input
@@ -138,7 +138,7 @@ export default function NewCustomerPage(): ReactElement {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Tax ID / EIN
                   </label>
                   <Input
@@ -152,12 +152,12 @@ export default function NewCustomerPage(): ReactElement {
 
             {/* Contact Information */}
             <div>
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
                 Contact Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Email
                   </label>
                   <Input
@@ -168,7 +168,7 @@ export default function NewCustomerPage(): ReactElement {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Phone
                   </label>
                   <Input
@@ -182,12 +182,12 @@ export default function NewCustomerPage(): ReactElement {
 
             {/* Address */}
             <div>
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
                 Address
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Street Address
                   </label>
                   <Input
@@ -199,7 +199,7 @@ export default function NewCustomerPage(): ReactElement {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                    <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                       City
                     </label>
                     <Input
@@ -210,7 +210,7 @@ export default function NewCustomerPage(): ReactElement {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                    <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                       State
                     </label>
                     <Input
@@ -221,7 +221,7 @@ export default function NewCustomerPage(): ReactElement {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                    <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                       Postal Code
                     </label>
                     <Input
@@ -232,7 +232,7 @@ export default function NewCustomerPage(): ReactElement {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                    <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                       Country
                     </label>
                     <Input
@@ -247,12 +247,12 @@ export default function NewCustomerPage(): ReactElement {
 
             {/* Payment Terms */}
             <div>
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
                 Payment Terms
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Payment Terms (days)
                   </label>
                   <Input
@@ -262,13 +262,13 @@ export default function NewCustomerPage(): ReactElement {
                     min="0"
                     placeholder="30"
                   />
-                  <p className="mt-1 text-sm text-surface-500">
+                  <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
                     Number of days until invoice payment is due
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Credit Limit
                   </label>
                   <Input
@@ -279,19 +279,19 @@ export default function NewCustomerPage(): ReactElement {
                     step="0.01"
                     placeholder="0.00"
                   />
-                  <p className="mt-1 text-sm text-surface-500">
+                  <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
                     Maximum outstanding balance allowed
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                     Status
                   </label>
                   <select
                     name="status"
                     defaultValue="active"
-                    className="w-full px-4 py-2.5 bg-white border border-surface-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-surface-900 border border-surface-300 dark:border-surface-600 text-surface-900 dark:text-surface-100 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -302,7 +302,7 @@ export default function NewCustomerPage(): ReactElement {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-semibold text-surface-700 mb-2">
+              <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">
                 Notes
               </label>
               <Textarea

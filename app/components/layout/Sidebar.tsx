@@ -100,68 +100,6 @@ const navigation: NavSection[] = [
       },
     ],
   },
-  {
-    title: "Accounting",
-    items: [
-      {
-        label: "Invoices",
-        href: "/accounting/invoices",
-        icon: (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-            />
-          </svg>
-        ),
-      },
-      {
-        label: "Payments",
-        href: "/accounting/payments",
-        icon: (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-            />
-          </svg>
-        ),
-      },
-      {
-        label: "Accounts",
-        href: "/accounting/accounts",
-        icon: (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-        ),
-      },
-    ],
-  },
 ];
 
 interface SidebarProps {
@@ -178,8 +116,8 @@ export function Sidebar({
   return (
     <aside
       className={clsx(
-        "fixed left-0 top-10 bg-gradient-to-b from-surface-900 to-surface-950 border-r border-surface-800/50 transition-all duration-300 ease-out z-40",
-        "h-[calc(100vh-2.5rem)]",
+        "fixed left-0 top-0 bg-gradient-to-b from-surface-900 to-surface-950 border-r border-surface-800/50 transition-all duration-300 ease-out z-40",
+        "h-screen",
         collapsed ? "w-16" : "w-64"
       )}
     >

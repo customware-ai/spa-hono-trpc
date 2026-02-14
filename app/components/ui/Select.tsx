@@ -84,7 +84,7 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={clsx(
-          "w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-surface-800 border rounded-lg text-left transition-all",
+          "w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-surface-900 border rounded-lg text-left transition-all",
           error
             ? "border-danger focus:ring-2 focus:ring-danger/20"
             : "border-surface-300 dark:border-surface-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20",

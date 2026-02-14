@@ -20,7 +20,7 @@ export function TopBar({ breadcrumbs = [], sidebarCollapsed = false }: TopBarPro
 
   return (
     <header className={clsx(
-      "fixed top-10 right-0 h-16 bg-white dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700 z-30 transition-all duration-300",
+      "fixed top-0 right-0 h-16 bg-white dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700 z-30 transition-all duration-300",
       sidebarCollapsed ? "left-16" : "left-64"
     )}>
       <div className="h-full flex items-center justify-between px-6">
