@@ -9,12 +9,14 @@ This file provides guidance to LLMs when working with code in this repository.
 This codebase follows strict architectural patterns and coding standards:
 
 ### 1. **Type Safety First**
+
 - Every function must have explicit return types
 - No `any` types allowed - use `unknown` or proper types
 - Use Zod schemas for runtime validation, derive TypeScript types from schemas
 - Full type checking must pass before committing
 
 ### 2. **Clean Architecture**
+
 - **db.ts** - Database & filesystem operations ONLY (single source of truth)
 - **services/** - Business logic & CRUD operations (uses Result pattern)
 - **schemas/** - Zod validation schemas (source of truth for types)
@@ -23,12 +25,14 @@ This codebase follows strict architectural patterns and coding standards:
 - **utils/** - Pure utility functions
 
 ### 3. **Error Handling**
+
 - Use neverthrow's `Result<T, E>` pattern for all operations that can fail
 - Never throw exceptions in business logic
 - Check `.isErr()` / `.isOk()` before accessing values
 - Provide meaningful error messages
 
 ### 4. **Testing Requirements**
+
 - All business logic must have tests
 - All UI components must have tests
 - Run checks only at the very end of the task (right before marking it complete). Run the narrowest relevant check based on what changed (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated). No need to run checks for non-code-only changes (e.g. updating Markdown/docs, copy, comments, or other non-executable content).
@@ -36,6 +40,7 @@ This codebase follows strict architectural patterns and coding standards:
 - Test coverage is mandatory, not optional
 
 ### 5. **Code Quality Standards**
+
 - Write self-documenting code with clear names
 - Comment the "why", not the "what"
 - Follow the single responsibility principle
@@ -81,6 +86,7 @@ SQLite (sql.js)
 ```
 
 **Key Rules:**
+
 1. **Routes** call **services**, never database directly
 2. **Services** validate with **schemas**, then call **database**
 3. **Database (db.ts)** is the ONLY file that touches filesystem
@@ -104,7 +110,7 @@ export type Customer = z.infer<typeof CustomerSchema>;
 
 // 3. Service validates and uses typed Result (services/erp.ts)
 export async function createCustomer(
-  data: unknown
+  data: unknown,
 ): Promise<Result<Customer, Error>> {
   // Validate input
   const validation = CustomerSchema.safeParse(data);
@@ -124,7 +130,7 @@ export async function createCustomer(
 // 4. Route loader uses typed result (routes/customers.tsx)
 export async function loader(): Promise<{
   customers: Customer[];
-  error: string | null
+  error: string | null;
 }> {
   const result = await getCustomers();
 
@@ -145,12 +151,14 @@ export default function CustomersPage(): ReactElement {
 ### Database Layer Rules
 
 **CRITICAL**: `db.ts` is the ONLY file that:
+
 - Imports sql.js
 - Reads/writes `database.db` file
 - Manages database connection
 - Calls `saveDatabase()` after mutations
 
 **NEVER:**
+
 - Import better-sqlite3 (we use sql.js)
 - Access filesystem outside of db.ts
 - Bypass the database layer
@@ -266,9 +274,7 @@ export const UpdateUserSchema = UserSchema.partial().required({ id: true });
 **Schema Validation in Services:**
 
 ```typescript
-export async function createUser(
-  data: unknown
-): Promise<Result<User, Error>> {
+export async function createUser(data: unknown): Promise<Result<User, Error>> {
   // Always validate unknown input
   const validation = CreateUserSchema.safeParse(data);
 
@@ -287,6 +293,7 @@ export async function createUser(
 **Database Technology:** sql.js (SQLite in JavaScript) with file persistence to `database.db`
 
 **Critical Rules:**
+
 1. **db.ts** is the ONLY file that imports sql.js and touches the filesystem
 2. Every mutation MUST call `saveDatabase()` to persist changes
 3. Use the migration system for all schema changes
@@ -336,21 +343,21 @@ npm test                     # Ensure tests pass
 ```typescript
 // ✅ CORRECT - All database operations in db.ts
 export async function insertUser(
-  data: Omit<User, "id">
+  data: Omit<User, "id">,
 ): Promise<Result<User, DatabaseError>> {
   try {
     const { db } = await getDatabase();
 
-    db.run(
-      `INSERT INTO users (name, email) VALUES (?, ?)`,
-      [data.name, data.email]
-    );
+    db.run(`INSERT INTO users (name, email) VALUES (?, ?)`, [
+      data.name,
+      data.email,
+    ]);
 
     // CRITICAL: Save after mutation
     await saveDatabase();
 
     const result = db.exec(
-      `SELECT * FROM users WHERE id = last_insert_rowid()`
+      `SELECT * FROM users WHERE id = last_insert_rowid()`,
     );
 
     return ok(mapRowToUser(result[0].values[0]));
@@ -364,7 +371,7 @@ export async function insertUser(
 }
 
 // ❌ WRONG - Never import sql.js outside db.ts
-import initSqlJs from "sql.js";  // NEVER DO THIS
+import initSqlJs from "sql.js"; // NEVER DO THIS
 ```
 
 ### Directory Structure
@@ -398,6 +405,7 @@ tests/                   # Test files mirror app/ structure
 ```
 
 **Structure Principles:**
+
 - Group by feature/domain (feature folders)
 - Separate concerns by layer (db → services → schemas → routes → components)
 - One file per entity/service/component
@@ -407,22 +415,26 @@ tests/                   # Test files mirror app/ structure
 ### Design System
 
 **Color Palette:**
+
 - Primary: Emerald green (`primary-*` Tailwind classes)
 - Surface: Slate gray (`surface-*` Tailwind classes)
 - Status colors: Red (danger), Amber (warning), Green (success), Blue (info)
 
 **Typography:**
+
 - Font: Work Sans (weights: 400, 500, 600, 700)
 - Professional, industrial aesthetic
 - NO generic AI aesthetics - distinctive, purposeful design
 
 **Component Patterns:**
+
 - All components in `app/components/ui/` are tested and reusable
 - Use composition over configuration
 - Props interfaces defined with TypeScript
 - Consistent styling with Tailwind CSS v4
 
 **Layout Structure:**
+
 - `PageLayout` - Main page wrapper with breadcrumbs
 - `PageHeader` - Consistent page titles and actions
 - `Sidebar` - Left navigation
@@ -503,6 +515,7 @@ export default function UsersPage(): ReactElement {
 ```
 
 **Key React Patterns:**
+
 - Use functional components exclusively
 - Explicit return types (`ReactElement`, `ReactNode`, etc.)
 - Props interfaces for all components
@@ -590,6 +603,7 @@ describe("User Service", () => {
 ```
 
 **Test Organization:**
+
 - Place tests in `tests/` directory mirroring `app/` structure
 - One test file per source file
 - Use descriptive test names
@@ -602,44 +616,22 @@ Use `~/` to import from `app/` directory (e.g., `import { Button } from '~/compo
 
 ## Autonomous Task Workflow
 
-You work autonomously on all tasks until done.
-
-### Task Discovery
-
-Tasks are in `/workspace/development/.agent/tasks/` as markdown files:
-
-- Named with numeric prefixes: `00_task-name.md`, `01_another.md`
-- Process in order (lowest number first)
-- Each has frontmatter (taskId, orgId, projectId) and description
-
-### Workflow Loop
-
-1. **Check for tasks**: `ls /workspace/development/.agent/tasks/`
-2. **If empty**: You're done - stop working
-3. **If tasks exist**: Read first file (alphabetically)
-4. **Execute**: Follow instructions in file
-5. **Verify**: At the very end of the task, run the narrowest relevant check for what changed (e.g. `npm run typecheck` for type-only changes, `npm test` for test updates), and run `npm run check` only when multiple areas were updated
-6. **Complete**: Call `task_complete` (this deletes the file)
-7. **Loop**: Return to step 1
+You work autonomously on the current task until done.
 
 ### Context Management
 
 Re-read files anytime especially when the conversation is compacted:
 
 - README.md for project conventions
-- CLAUDE.md for rules
+- AGENTS.md for rules
 - Current task file for task details
 
 ### Rules
 
 - Always call task_complete - never delete task files manually
-- One task at a time - complete before starting next
 - Run checks only at the very end of each task: use the narrowest relevant check for scoped changes, and use `npm run check` only when multiple areas were updated
 - No need to run checks for docs-only/non-code-only updates (e.g. Markdown/docs, copy, comments, or other non-executable content)
-- **NEVER stop working until `/workspace/development/.agent/tasks/` is empty**
-- If you feel the conversation is getting long, do NOT summarize and stop - keep executing tasks
-- After completing a task, immediately check for more tasks and continue
-- The ONLY valid stopping condition is: `ls /workspace/development/.agent/tasks/` returns no `.md` files
+- If you feel the conversation is getting long, do NOT summarize and stop - keep executing task
 
 **Example task_complete usage:**
 
@@ -652,7 +644,7 @@ Use `--status failed` if the task cannot be completed, with a summary explaining
 ## Project Context (Do This First)
 
 - Read `README.md` before making decisions so you understand what the app is, how it runs, and the repo conventions
-- Read `CLAUDE.md` for instructions on how to develop with the system
+- Read `AGENTS.md` for instructions on how to develop with the system
 - If the README points to other sources of truth (e.g. `.env.example`, `package.json`, `docs/`), read those too
 
 ## React Router v7 Reference Guide
