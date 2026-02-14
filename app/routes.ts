@@ -34,7 +34,7 @@ export default [
   index("routes/landing.tsx"),
 
   // Main dashboard (make this your index route for production apps)
-  route("dashboard", "routes/dashboard.tsx"),
+  route("home", "routes/home.tsx"),
 
   // Sales & CRM routes
   ...prefix("sales", [
