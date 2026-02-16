@@ -13,12 +13,13 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
 import type { ActionFunctionArgs } from "react-router";
-import { Form, useNavigate, useActionData } from "react-router";
+import { Form, useNavigate, useActionData, useRouteError, isRouteErrorResponse } from "react-router";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Input, Textarea } from "../../components/ui/Input";
+import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
 import { createCustomer } from "../../services/erp";
 import { CreateCustomerSchema } from "../../schemas";
 import { redirect } from "react-router";
@@ -75,6 +76,44 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response 
   return redirect("/sales/customers");
 }
 
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText || "An error occurred"
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Customers", href: "/sales/customers" },
+        { label: "New Customer" },
+      ]}
+    >
+      <PageHeader
+        title="New Customer"
+        description="Create a new customer record with contact and billing information."
+      />
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
+    </PageLayout>
+  );
+}
+
 export default function NewCustomerPage(): ReactElement {
   const navigate = useNavigate();
   const actionData = useActionData<typeof action>();
@@ -95,9 +134,14 @@ export default function NewCustomerPage(): ReactElement {
 
       {/* Error Alert */}
       {actionData?.error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <strong>Error:</strong> {actionData.error}
-        </div>
+        <ErrorDisplay
+          error={{
+            type: actionData.error === "Validation failed" ? "VALIDATION_ERROR" : "DATABASE_ERROR",
+            message: actionData.error,
+          }}
+          variant="inline"
+          className="mb-6"
+        />
       )}
 
       <Card>

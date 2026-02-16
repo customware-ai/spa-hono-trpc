@@ -14,7 +14,7 @@ import type { ReactElement, JSX } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/quotes";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
 import { FileText } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
@@ -26,6 +26,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { Select } from "../../components/ui/Select";
 import { Input } from "../../components/ui/Input";
 import { TableSkeleton } from "../../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
 import { getDemoQuotes } from "../../services/erp";
 
 interface Quote extends Record<string, unknown> {
@@ -85,6 +86,43 @@ export function HydrateFallback(): ReactElement {
         description="Create and manage sales quotations for your customers."
       />
       <TableSkeleton rows={8} columns={6} />
+    </PageLayout>
+  );
+}
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText || "An error occurred"
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Quotes" },
+      ]}
+    >
+      <PageHeader
+        title="Quotes"
+        description="Create and manage sales quotations for your customers."
+      />
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
     </PageLayout>
   );
 }

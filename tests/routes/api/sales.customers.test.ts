@@ -119,7 +119,10 @@ describe('API Sales Customers Routes', () => {
     });
 
     it('should handle database errors', async () => {
-      vi.mocked(erp.getCustomers).mockResolvedValue(err(new Error('Database error')));
+      vi.mocked(erp.getCustomers).mockResolvedValue(err({
+        type: 'DATABASE_ERROR' as const,
+        message: 'Database error',
+      }));
 
       const request = createRequest('GET', 'http://localhost/api/sales/customers');
       const response = await loader(createLoaderArgs(request));
@@ -160,7 +163,10 @@ describe('API Sales Customers Routes', () => {
     });
 
     it('should handle database errors during creation', async () => {
-      vi.mocked(erp.createCustomer).mockResolvedValue(err(new Error('Database error')));
+      vi.mocked(erp.createCustomer).mockResolvedValue(err({
+        type: 'DATABASE_ERROR' as const,
+        message: 'Database error',
+      }));
 
       const request = createRequest('POST', 'http://localhost/api/sales/customers', {
         company_name: 'Test Corp',

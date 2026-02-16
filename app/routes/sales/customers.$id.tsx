@@ -13,7 +13,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/customers.$id";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
 import { ShoppingBag, DollarSign, Activity, FileText, Users } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
@@ -21,6 +21,7 @@ import { Card } from "../../components/ui/Card";
 import { Tabs } from "../../components/ui/Tabs";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CardSkeleton, LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
 import { getCustomerById } from "../../services/erp";
 import type { Customer } from "../../schemas";
 
@@ -82,6 +83,41 @@ export function HydrateFallback(): ReactElement {
           <CardSkeleton count={3} />
         </div>
       </div>
+    </PageLayout>
+  );
+}
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText || "An error occurred"
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Customers", href: "/sales/customers" },
+        { label: "Error" },
+      ]}
+    >
+      <PageHeader title="Customer" />
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
     </PageLayout>
   );
 }

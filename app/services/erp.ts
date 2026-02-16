@@ -25,34 +25,39 @@
  * Database: SQLite via sql.js (in-memory with file persistence)
  */
 
+import { z } from "zod";
 import { Result, ok, err } from "neverthrow";
-import { getDatabase } from "../db";
-import type { Database, SqlValue } from "sql.js";
+import { getDatabase, saveDatabase } from "../db";
+import type { SqlValue } from "sql.js";
+import type { Database } from "../db";
+import type { DatabaseError } from "../types/errors";
 import {
   generateDocumentNumber,
 } from "../utils/calculations";
+import {
+  CustomerSchema,
+} from "../schemas";
 import type {
   Customer,
   CreateCustomer,
   UpdateCustomer,
 } from "../schemas";
 
+/**
+ * Creates a typed DatabaseError object
+ */
+function createDatabaseError(message: string, originalError?: unknown): DatabaseError {
+  return {
+    type: "DATABASE_ERROR",
+    message,
+    originalError: originalError instanceof Error ? originalError : undefined,
+  };
+}
+
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
-/**
- * Saves the current database state to disk.
- * Must be called after any INSERT, UPDATE, or DELETE operation.
- */
-async function saveDb(db: Database): Promise<void> {
-  const fs = await import("fs");
-  const path = await import("path");
-  const dbPath = path.join(process.cwd(), "database.db");
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(dbPath, buffer);
-}
 
 /**
  * Executes a SQL query and returns the first row as an object.
@@ -140,7 +145,7 @@ function execute(db: Database, sql: string, params?: SqlValue[]): number {
 export async function getCustomers(filters?: {
   status?: "active" | "inactive";
   search?: string;
-}): Promise<Result<Customer[], Error>> {
+}): Promise<Result<Customer[], DatabaseError>> {
   try {
     const { db } = await getDatabase();
 
@@ -163,9 +168,16 @@ export async function getCustomers(filters?: {
     sql += " ORDER BY company_name ASC";
 
     const rows = queryAll(db, sql, params.length > 0 ? params : undefined);
-    return ok(rows as Customer[]);
+
+    // Validate returned data with Zod schema
+    const validation = z.array(CustomerSchema).safeParse(rows);
+    if (!validation.success) {
+      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
+    }
+
+    return ok(validation.data);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to fetch customers", error));
   }
 }
 
@@ -175,13 +187,24 @@ export async function getCustomers(filters?: {
  * @param id - Customer ID
  * @returns Result containing customer or null if not found
  */
-export async function getCustomerById(id: number): Promise<Result<Customer | null, Error>> {
+export async function getCustomerById(id: number): Promise<Result<Customer | null, DatabaseError>> {
   try {
     const { db } = await getDatabase();
     const row = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-    return ok(row as Customer | null);
+
+    if (!row) {
+      return ok(null);
+    }
+
+    // Validate returned data with Zod schema
+    const validation = CustomerSchema.safeParse(row);
+    if (!validation.success) {
+      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
+    }
+
+    return ok(validation.data);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to fetch customer", error));
   }
 }
 
@@ -198,7 +221,7 @@ export async function getCustomerById(id: number): Promise<Result<Customer | nul
  *   payment_terms: 30
  * });
  */
-export async function createCustomer(data: CreateCustomer): Promise<Result<Customer, Error>> {
+export async function createCustomer(data: CreateCustomer): Promise<Result<Customer, DatabaseError>> {
   try {
     const { db } = await getDatabase();
 
@@ -227,15 +250,25 @@ export async function createCustomer(data: CreateCustomer): Promise<Result<Custo
     ];
 
     execute(db, sql, params);
-    await saveDb(db);
+    await saveDatabase();
 
     // Get the inserted record
     const insertedId = queryOne(db, "SELECT last_insert_rowid() as id", [])?.id as number;
     const customer = queryOne(db, "SELECT * FROM customers WHERE id = ?", [insertedId]);
 
-    return ok(customer as Customer);
+    if (!customer) {
+      return err(createDatabaseError("Failed to retrieve created customer"));
+    }
+
+    // Validate returned data with Zod schema
+    const validation = CustomerSchema.safeParse(customer);
+    if (!validation.success) {
+      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
+    }
+
+    return ok(validation.data);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to create customer", error));
   }
 }
 
@@ -249,7 +282,7 @@ export async function createCustomer(data: CreateCustomer): Promise<Result<Custo
 export async function updateCustomer(
   id: number,
   data: UpdateCustomer
-): Promise<Result<Customer, Error>> {
+): Promise<Result<Customer, DatabaseError>> {
   try {
     const { db } = await getDatabase();
 
@@ -259,25 +292,42 @@ export async function updateCustomer(
 
     Object.entries(data).forEach(([key, value]) => {
       updates.push(`${key} = ?`);
-      params.push(value);
+      params.push(value as SqlValue);
     });
 
     if (updates.length === 0) {
       // No updates provided, just return existing customer
       const customer = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-      return ok(customer as Customer);
+      if (!customer) {
+        return err(createDatabaseError("Customer not found"));
+      }
+      const validation = CustomerSchema.safeParse(customer);
+      if (!validation.success) {
+        return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
+      }
+      return ok(validation.data);
     }
 
     params.push(id);
     const sql = `UPDATE customers SET ${updates.join(", ")} WHERE id = ?`;
 
     execute(db, sql, params);
-    await saveDb(db);
+    await saveDatabase();
 
     const customer = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-    return ok(customer as Customer);
+    if (!customer) {
+      return err(createDatabaseError("Failed to retrieve updated customer"));
+    }
+
+    // Validate returned data with Zod schema
+    const validation = CustomerSchema.safeParse(customer);
+    if (!validation.success) {
+      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
+    }
+
+    return ok(validation.data);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to update customer", error));
   }
 }
 
@@ -287,14 +337,14 @@ export async function updateCustomer(
  * @param id - Customer ID
  * @returns Result indicating success
  */
-export async function deleteCustomer(id: number): Promise<Result<void, Error>> {
+export async function deleteCustomer(id: number): Promise<Result<void, DatabaseError>> {
   try {
     const { db } = await getDatabase();
     execute(db, "UPDATE customers SET status = 'inactive' WHERE id = ?", [id]);
-    await saveDb(db);
+    await saveDatabase();
     return ok(undefined);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to delete customer", error));
   }
 }
 
@@ -319,7 +369,7 @@ export async function getNextDocumentNumber(
   prefix: string,
   tableName: string,
   columnName: string
-): Promise<Result<string, Error>> {
+): Promise<Result<string, DatabaseError>> {
   try {
     const { db } = await getDatabase();
 
@@ -331,7 +381,7 @@ export async function getNextDocumentNumber(
 
     return ok(nextNumber);
   } catch (error) {
-    return err(error as Error);
+    return err(createDatabaseError("Failed to generate document number", error));
   }
 }
 

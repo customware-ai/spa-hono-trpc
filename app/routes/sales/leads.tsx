@@ -20,7 +20,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/leads";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
 import { LayoutGrid, List } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
@@ -28,6 +28,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { CardSkeleton } from "../../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
 import { getDemoLeads } from "../../services/erp";
 
 interface Lead {
@@ -121,6 +122,22 @@ export function HydrateFallback(): ReactElement {
 }
 
 /**
+ * Props for the KanbanColumn component
+ */
+interface KanbanColumnProps {
+  /** Column title */
+  title: string;
+  /** Status identifier */
+  status: string;
+  /** Number of leads in column */
+  count: number;
+  /** Array of leads to display */
+  leads: Lead[];
+  /** Color class for the status indicator */
+  color: string;
+}
+
+/**
  * Kanban column component
  */
 function KanbanColumn({
@@ -129,13 +146,7 @@ function KanbanColumn({
   count,
   leads,
   color,
-}: {
-  title: string;
-  status: string;
-  count: number;
-  leads: Lead[];
-  color: string;
-}): ReactElement {
+}: KanbanColumnProps): ReactElement {
   return (
     <div className="flex-1 min-w-[300px]">
       <div className="bg-surface-50 dark:bg-surface-900 rounded-lg p-4">
@@ -173,6 +184,43 @@ function KanbanColumn({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText || "An error occurred"
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Leads" },
+      ]}
+    >
+      <PageHeader
+        title="Leads"
+        description="Manage your sales pipeline and track lead progress."
+      />
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
+    </PageLayout>
   );
 }
 

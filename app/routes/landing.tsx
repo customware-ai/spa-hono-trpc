@@ -1,4 +1,34 @@
 import type { ReactElement } from "react";
+import { useRouteError, isRouteErrorResponse } from "react-router";
+import { ErrorDisplay } from "../components/ui/ErrorDisplay";
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
+    </div>
+  );
+}
 
 export default function LandingPage(): ReactElement {
   return (

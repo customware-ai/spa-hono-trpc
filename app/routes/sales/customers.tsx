@@ -16,7 +16,7 @@ import type { ReactElement, JSX } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/customers";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useRouteError, isRouteErrorResponse } from "react-router";
 import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
 import { PageHeader } from "../../components/layout/PageHeader";
@@ -28,6 +28,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { TableSkeleton } from "../../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
 import { getCustomers } from "../../services/erp";
 import type { Customer } from "../../schemas";
 
@@ -87,6 +88,43 @@ export function HydrateFallback(): ReactElement {
         description="Manage your customer relationships and contact information."
       />
       <TableSkeleton rows={8} columns={5} />
+    </PageLayout>
+  );
+}
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  const errorType = isRouteErrorResponse(error)
+    ? error.status === 404
+      ? "NOT_FOUND"
+      : "SERVER_ERROR"
+    : "SERVER_ERROR";
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.statusText || "An error occurred"
+    : error instanceof Error
+      ? error.message
+      : "An unexpected error occurred";
+
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Customers" },
+      ]}
+    >
+      <PageHeader
+        title="Customers"
+        description="Manage your customer relationships and contact information."
+      />
+      <ErrorDisplay
+        error={{ type: errorType, message: errorMessage }}
+        variant="page"
+      />
     </PageLayout>
   );
 }
@@ -202,9 +240,11 @@ export default function CustomersPage(): ReactElement {
 
       {/* Error Alert */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <strong>Error:</strong> {error}
-        </div>
+        <ErrorDisplay
+          error={{ type: "DATABASE_ERROR", message: error }}
+          variant="inline"
+          className="mb-6"
+        />
       )}
 
       {/* Filters */}

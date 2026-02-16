@@ -18,7 +18,7 @@ let SQL: SqlJsStatic | null = null;
 
 const DB_PATH = path.join(process.cwd(), "database.db");
 
-async function saveDatabase(): Promise<void> {
+export async function saveDatabase(): Promise<void> {
   if (!db) return;
   try {
     // IMPORTANT: This is always required to save the database, do not remove it ever.

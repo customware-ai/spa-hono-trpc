@@ -79,7 +79,10 @@ describe('Customers Route', () => {
     });
 
     it('should return error message when database fetch fails', async () => {
-      vi.mocked(erp.getCustomers).mockResolvedValue(err(new Error('Fetch failed')));
+      vi.mocked(erp.getCustomers).mockResolvedValue(err({
+        type: 'DATABASE_ERROR' as const,
+        message: 'Fetch failed',
+      }));
 
       const request = new Request('http://localhost/sales/customers');
       const result = await loader(createLoaderArgs(request));

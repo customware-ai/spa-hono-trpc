@@ -1,10 +1,11 @@
 import type { ReactElement } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useRouteError, isRouteErrorResponse } from "react-router";
 import { DollarSign, Users, ShoppingCart, TrendingUp, UserPlus, FileText } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { ErrorDisplay } from "../components/ui/ErrorDisplay";
 
 // Sample data for demonstration
 const metrics = [
@@ -121,6 +122,41 @@ function RevenueGraph(): ReactElement {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * ErrorBoundary - Handles errors in this route
+ * Catches errors from loader, action, and component rendering.
+ */
+export function ErrorBoundary(): ReactElement {
+  const error = useRouteError();
+
+  // Handle HTTP error responses (4xx, 5xx)
+  if (isRouteErrorResponse(error)) {
+    return (
+      <PageLayout breadcrumbs={[{ label: "Dashboard" }]}>
+        <ErrorDisplay
+          error={{
+            type: error.status === 404 ? "NOT_FOUND" : "SERVER_ERROR",
+            message: error.statusText || "An error occurred",
+          }}
+          variant="page"
+        />
+      </PageLayout>
+    );
+  }
+
+  // Handle thrown errors
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+  return (
+    <PageLayout breadcrumbs={[{ label: "Dashboard" }]}>
+      <ErrorDisplay
+        error={{ type: "SERVER_ERROR", message: errorMessage }}
+        variant="page"
+      />
+    </PageLayout>
   );
 }
 
