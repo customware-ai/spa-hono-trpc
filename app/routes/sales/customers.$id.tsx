@@ -71,8 +71,8 @@ export function HydrateFallback(): ReactElement {
         <Card>
           <LoadingSkeleton variant="rectangular" className="h-6 w-48 mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i}>
+            {["field-1", "field-2", "field-3", "field-4", "field-5", "field-6", "field-7", "field-8"].map((fieldId) => (
+              <div key={fieldId}>
                 <LoadingSkeleton variant="rectangular" className="h-4 w-24 mb-2" />
                 <LoadingSkeleton variant="rectangular" className="h-5 w-40" />
               </div>
@@ -154,8 +154,10 @@ export default function CustomerDetailPage(): ReactElement {
                 <p className="text-surface-900 font-semibold">{customer.company_name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-surface-500">Contact Name</label>
-                <p className="text-surface-900">{customer.contact_name || "—"}</p>
+                <label className="text-sm font-medium text-surface-500">Status</label>
+                <div className="mt-1">
+                  <StatusBadge status={(customer.status === "active" || customer.status === "inactive") ? customer.status : "info"} showDot />
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-surface-500">Email</label>
@@ -165,40 +167,7 @@ export default function CustomerDetailPage(): ReactElement {
                 <label className="text-sm font-medium text-surface-500">Phone</label>
                 <p className="text-surface-900">{customer.phone || "—"}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-surface-500">Payment Terms</label>
-                <p className="text-surface-900">{customer.payment_terms} days</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-surface-500">Credit Limit</label>
-                <p className="text-surface-900">
-                  ${customer.credit_limit.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-surface-500">Status</label>
-                <div className="mt-1">
-                  <StatusBadge status={(customer.status === "active" || customer.status === "inactive") ? customer.status : "info"} showDot />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-surface-500">Tax ID</label>
-                <p className="text-surface-900">{customer.tax_id || "—"}</p>
-              </div>
             </div>
-
-            {customer.address && (
-              <div className="mt-4 pt-4 border-t border-surface-200">
-                <label className="text-sm font-medium text-surface-500">Address</label>
-                <p className="text-surface-900 mt-1">
-                  {customer.address}
-                  {customer.city && `, ${customer.city}`}
-                  {customer.state && `, ${customer.state}`}
-                  {customer.postal_code && ` ${customer.postal_code}`}
-                  {customer.country && `, ${customer.country}`}
-                </p>
-              </div>
-            )}
 
             {customer.notes && (
               <div className="mt-4 pt-4 border-t border-surface-200">
@@ -303,7 +272,7 @@ export default function CustomerDetailPage(): ReactElement {
     >
       <PageHeader
         title={customer.company_name}
-        description={customer.contact_name ? `Contact: ${customer.contact_name}` : undefined}
+        description={customer.email || undefined}
       />
 
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />

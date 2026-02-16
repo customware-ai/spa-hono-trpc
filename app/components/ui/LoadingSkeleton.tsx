@@ -276,6 +276,13 @@ interface TableSkeletonProps {
 }
 
 /**
+ * Generates an array of unique skeleton IDs for stable React keys.
+ */
+function generateSkeletonIds(count: number, prefix: string): string[] {
+  return Array.from({ length: count }, (_, i) => `${prefix}-${i}`);
+}
+
+/**
  * Full table skeleton with header and body rows.
  * Matches the styling of the Table component.
  *
@@ -295,6 +302,8 @@ export function TableSkeleton({
   className,
 }: TableSkeletonProps): ReactElement {
   const baseClasses = "bg-surface-200 dark:bg-surface-700 animate-pulse";
+  const columnIds = generateSkeletonIds(columns, "col");
+  const rowIds = generateSkeletonIds(rows, "row");
 
   return (
     <div className={clsx(
@@ -304,8 +313,8 @@ export function TableSkeleton({
       <table className="w-full">
         <thead className="bg-surface-50 dark:bg-surface-800/50 border-b border-surface-200 dark:border-surface-700">
           <tr>
-            {Array.from({ length: columns }).map((_, i) => (
-              <th key={i} className="px-6 py-4 text-left">
+            {columnIds.map((colId) => (
+              <th key={colId} className="px-6 py-4 text-left">
                 <div
                   className={clsx(baseClasses, "h-4 rounded")}
                   style={{ width: `${60 + Math.random() * 40}%` }}
@@ -315,10 +324,10 @@ export function TableSkeleton({
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: rows }).map((_, rowIdx) => (
-            <tr key={rowIdx} className="border-b border-surface-100 dark:border-surface-700">
-              {Array.from({ length: columns }).map((_, colIdx) => (
-                <td key={colIdx} className="px-6 py-4">
+          {rowIds.map((rowId) => (
+            <tr key={rowId} className="border-b border-surface-100 dark:border-surface-700">
+              {columnIds.map((colId) => (
+                <td key={`${rowId}-${colId}`} className="px-6 py-4">
                   <div
                     className={clsx(baseClasses, "h-4 rounded")}
                     style={{ width: `${40 + Math.random() * 50}%` }}
@@ -382,8 +391,8 @@ export function PageSkeleton({
 
       {contentType === "form" && (
         <div className="max-w-md space-y-4">
-          {Array.from({ length: itemCount }).map((_, i) => (
-            <div key={i} className="space-y-2">
+          {generateSkeletonIds(itemCount, "form-field").map((fieldId) => (
+            <div key={fieldId} className="space-y-2">
               <div className={clsx(baseClasses, "h-4 w-24 rounded")} />
               <div className={clsx(baseClasses, "h-10 w-full rounded-lg")} />
             </div>
@@ -417,10 +426,12 @@ export function FormSkeleton({
 }: FormSkeletonProps): ReactElement {
   const baseClasses = "bg-surface-200 dark:bg-surface-700 animate-pulse";
 
+  const fieldIds = generateSkeletonIds(fields, "form-field");
+
   return (
     <div className={clsx("space-y-4", className)}>
-      {Array.from({ length: fields }).map((_, i) => (
-        <div key={i} className="space-y-2">
+      {fieldIds.map((fieldId) => (
+        <div key={fieldId} className="space-y-2">
           <div className={clsx(baseClasses, "h-4 w-24 rounded")} />
           <div className={clsx(baseClasses, "h-10 w-full rounded-lg")} />
         </div>

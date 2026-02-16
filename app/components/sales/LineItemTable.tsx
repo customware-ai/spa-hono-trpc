@@ -14,6 +14,7 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
 interface LineItem {
+  id: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -37,6 +38,7 @@ export function LineItemTable({
     onChange([
       ...items,
       {
+        id: crypto.randomUUID(),
         description: "",
         quantity: 1,
         unit_price: 0,
@@ -47,20 +49,24 @@ export function LineItemTable({
     ]);
   };
 
-  const handleRemoveItem = (index: number): void => {
-    onChange(items.filter((_, i) => i !== index));
+  const handleRemoveItem = (id: string): void => {
+    onChange(items.filter((item) => item.id !== id));
   };
 
-  const handleItemChange = (index: number, field: keyof LineItem, value: string | number): void => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+  const handleItemChange = (id: string, field: keyof LineItem, value: string | number): void => {
+    const newItems = items.map((item) => {
+      if (item.id !== id) return item;
 
-    // Recalculate line total
-    const item = newItems[index];
-    const subtotal = item.quantity * item.unit_price;
-    const afterDiscount = subtotal * (1 - (item.discount_percent || 0) / 100);
-    const withTax = afterDiscount * (1 + (item.tax_rate || 0) / 100);
-    newItems[index].line_total = withTax;
+      const updated = { ...item, [field]: value };
+
+      // Recalculate line total
+      const subtotal = updated.quantity * updated.unit_price;
+      const afterDiscount = subtotal * (1 - (updated.discount_percent || 0) / 100);
+      const withTax = afterDiscount * (1 + (updated.tax_rate || 0) / 100);
+      updated.line_total = withTax;
+
+      return updated;
+    });
 
     onChange(newItems);
   };
@@ -110,8 +116,8 @@ export function LineItemTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-100">
-            {items.map((item, index) => (
-              <tr key={`${item.description}-${index}`}>
+            {items.map((item) => (
+              <tr key={item.id}>
                 <td className="px-4 py-3">
                   {readonly ? (
                     <span className="text-surface-900">{item.description}</span>
@@ -119,7 +125,7 @@ export function LineItemTable({
                     <Input
                       type="text"
                       value={item.description}
-                      onChange={(e) => handleItemChange(index, "description", e.target.value)}
+                      onChange={(e) => handleItemChange(item.id, "description", e.target.value)}
                       placeholder="Item description"
                     />
                   )}
@@ -131,7 +137,7 @@ export function LineItemTable({
                     <Input
                       type="number"
                       value={item.quantity}
-                      onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(item.id, "quantity", parseFloat(e.target.value) || 0)}
                       min="0"
                       step="1"
                     />
@@ -144,7 +150,7 @@ export function LineItemTable({
                     <Input
                       type="number"
                       value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, "unit_price", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(item.id, "unit_price", parseFloat(e.target.value) || 0)}
                       min="0"
                       step="0.01"
                     />
@@ -157,7 +163,7 @@ export function LineItemTable({
                     <Input
                       type="number"
                       value={item.discount_percent || 0}
-                      onChange={(e) => handleItemChange(index, "discount_percent", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(item.id, "discount_percent", parseFloat(e.target.value) || 0)}
                       min="0"
                       max="100"
                       step="0.1"
@@ -171,7 +177,7 @@ export function LineItemTable({
                     <Input
                       type="number"
                       value={item.tax_rate || 0}
-                      onChange={(e) => handleItemChange(index, "tax_rate", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(item.id, "tax_rate", parseFloat(e.target.value) || 0)}
                       min="0"
                       max="100"
                       step="0.1"
@@ -184,7 +190,7 @@ export function LineItemTable({
                 {!readonly && (
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => handleRemoveItem(index)}
+                      onClick={() => handleRemoveItem(item.id)}
                       className="text-red-600 hover:text-red-700"
                       type="button"
                     >

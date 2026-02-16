@@ -35,17 +35,8 @@ function createMockCustomer(overrides?: Partial<Customer>): Customer {
   return {
     id: 1,
     company_name: 'Test Corp',
-    contact_name: null,
     email: 'test@test.com',
     phone: null,
-    address: null,
-    city: null,
-    state: null,
-    postal_code: null,
-    country: 'USA',
-    tax_id: null,
-    payment_terms: 30,
-    credit_limit: 0,
     status: 'active',
     notes: null,
     created_at: '2024-01-01T00:00:00.000Z',
@@ -67,8 +58,6 @@ describe('New Customer Route', () => {
       const formData = createFormData({
         company_name: 'New Corp',
         email: 'new@corp.com',
-        payment_terms: '30',
-        credit_limit: '5000',
       });
 
       const request = new Request('http://localhost/sales/customers/new', {
@@ -145,9 +134,6 @@ describe('New Customer Route', () => {
       expect(erp.createCustomer).toHaveBeenCalledWith(
         expect.objectContaining({
           company_name: 'Minimal Corp',
-          country: 'USA',
-          payment_terms: 30,
-          credit_limit: 0,
           status: 'active',
         })
       );
@@ -159,17 +145,8 @@ describe('New Customer Route', () => {
 
       const formData = createFormData({
         company_name: 'Full Corp',
-        contact_name: 'John Doe',
         email: 'john@fullcorp.com',
         phone: '555-1234',
-        address: '123 Main St',
-        city: 'New York',
-        state: 'NY',
-        postal_code: '10001',
-        country: 'Canada',
-        tax_id: '123-456-789',
-        payment_terms: '60',
-        credit_limit: '10000',
         status: 'inactive',
         notes: 'Important customer',
       });
@@ -184,15 +161,10 @@ describe('New Customer Route', () => {
       expect(erp.createCustomer).toHaveBeenCalledWith(
         expect.objectContaining({
           company_name: 'Full Corp',
-          contact_name: 'John Doe',
           email: 'john@fullcorp.com',
           phone: '555-1234',
-          city: 'New York',
-          state: 'NY',
-          country: 'Canada',
-          payment_terms: 60,
-          credit_limit: 10000,
           status: 'inactive',
+          notes: 'Important customer',
         })
       );
     });
@@ -203,8 +175,8 @@ describe('New Customer Route', () => {
 
       const formData = createFormData({
         company_name: 'Test Corp',
-        contact_name: '',
         email: '',
+        phone: '',
       });
 
       const request = new Request('http://localhost/sales/customers/new', {
@@ -217,8 +189,8 @@ describe('New Customer Route', () => {
       expect(erp.createCustomer).toHaveBeenCalledWith(
         expect.objectContaining({
           company_name: 'Test Corp',
-          contact_name: null,
           email: null,
+          phone: null,
         })
       );
     });

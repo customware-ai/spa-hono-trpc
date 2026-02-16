@@ -95,8 +95,8 @@ export function Table<T extends Record<string, unknown>>({
               </tr>
             </thead>
             <tbody>
-              {[...Array(5)].map((_, i) => (
-                <tr key={`skeleton-row-${i}`} className="border-b border-surface-100 dark:border-surface-700">
+              {["row-1", "row-2", "row-3", "row-4", "row-5"].map((rowId) => (
+                <tr key={`skeleton-${rowId}`} className="border-b border-surface-100 dark:border-surface-700">
                   {columns.map((column) => (
                     <td key={column.key} className="px-6 py-4">
                       <div className="h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse" />

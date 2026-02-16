@@ -142,7 +142,6 @@ export default function CustomersPage(): ReactElement {
     const matchesSearch =
       !searchQuery ||
       customer.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
@@ -156,13 +155,8 @@ export default function CustomersPage(): ReactElement {
       key: "company_name",
       label: "Company",
       sortable: true,
-      render: (value: unknown, row: Customer): JSX.Element => (
-        <div>
-          <div className="font-semibold text-surface-900">{value as string}</div>
-          {row.contact_name && (
-            <div className="text-sm text-surface-500">{row.contact_name}</div>
-          )}
-        </div>
+      render: (value: unknown): JSX.Element => (
+        <div className="font-semibold text-surface-900">{value as string}</div>
       ),
     },
     {
@@ -181,11 +175,6 @@ export default function CustomersPage(): ReactElement {
         const phone = value as string | null;
         return phone ? <>{phone}</> : <span className="text-surface-400">—</span>;
       },
-    },
-    {
-      key: "payment_terms",
-      label: "Terms",
-      render: (value: unknown): JSX.Element => <span className="text-surface-600">{value as number} days</span>,
     },
     {
       key: "status",
@@ -252,7 +241,7 @@ export default function CustomersPage(): ReactElement {
         <div className="flex-1">
           <Input
             type="search"
-            placeholder="Search customers by name, email, or contact..."
+            placeholder="Search customers by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

@@ -6,22 +6,13 @@ import { z } from "zod";
 
 /**
  * Schema for a complete customer record from the database.
- * Includes all fields including auto-generated ones (id, timestamps).
+ * Simplified schema with essential fields only.
  */
 export const CustomerSchema = z.object({
   id: z.number().int().positive(),
   company_name: z.string().min(1, "Company name is required"),
-  contact_name: z.string().nullable(),
   email: z.string().email("Invalid email format").nullable(),
   phone: z.string().nullable(),
-  address: z.string().nullable(),
-  city: z.string().nullable(),
-  state: z.string().nullable(),
-  postal_code: z.string().nullable(),
-  country: z.string().default("USA"),
-  tax_id: z.string().nullable(),
-  payment_terms: z.number().int().min(0).default(30), // Days until payment is due
-  credit_limit: z.number().min(0).default(0),
   status: z.enum(["active", "inactive"]).default("active"),
   notes: z.string().nullable(),
   created_at: z.string(),
@@ -31,24 +22,14 @@ export const CustomerSchema = z.object({
 /**
  * Schema for creating a new customer.
  * Excludes auto-generated fields (id, timestamps).
- * Makes all optional fields nullable.
  */
 export const CreateCustomerSchema = CustomerSchema.omit({
   id: true,
   created_at: true,
   updated_at: true,
 }).partial({
-  contact_name: true,
   email: true,
   phone: true,
-  address: true,
-  city: true,
-  state: true,
-  postal_code: true,
-  country: true,
-  tax_id: true,
-  payment_terms: true,
-  credit_limit: true,
   status: true,
   notes: true,
 });

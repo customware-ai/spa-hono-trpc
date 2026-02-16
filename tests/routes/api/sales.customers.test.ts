@@ -54,17 +54,8 @@ function createMockCustomer(overrides?: Partial<Customer>): Customer {
   const baseCustomer: Customer = {
     id: 1,
     company_name: 'Acme Corp',
-    contact_name: null,
     email: 'info@acme.com',
     phone: null,
-    address: null,
-    city: null,
-    state: null,
-    postal_code: null,
-    country: 'USA',  // Default per schema
-    tax_id: null,
-    payment_terms: 30,
-    credit_limit: 0,
     status: 'active',
     notes: null,
     created_at: '2024-01-01T00:00:00.000Z',
@@ -141,7 +132,6 @@ describe('API Sales Customers Routes', () => {
       const request = createRequest('POST', 'http://localhost/api/sales/customers', {
         company_name: 'New Corp',
         email: 'info@newcorp.com',
-        payment_terms: '30',
       });
       const response = await action(createActionArgs(request));
 

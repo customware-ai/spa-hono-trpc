@@ -39,17 +39,8 @@ function createMockCustomer(overrides?: Partial<Customer>): Customer {
   return {
     id: 1,
     company_name: 'Test Corp',
-    contact_name: 'John Doe',
     email: 'john@testcorp.com',
     phone: '555-1234',
-    address: '123 Main St',
-    city: 'New York',
-    state: 'NY',
-    postal_code: '10001',
-    country: 'USA',
-    tax_id: '12-3456789',
-    payment_terms: 30,
-    credit_limit: 5000,
     status: 'active',
     notes: 'Important customer',
     created_at: '2024-01-01T00:00:00.000Z',
@@ -123,17 +114,8 @@ describe('Customer Detail Route', () => {
       const mockCustomer = createMockCustomer({
         id: 1,
         company_name: 'Full Data Corp',
-        contact_name: 'Jane Smith',
         email: 'jane@fulldata.com',
         phone: '555-9999',
-        address: '456 Oak Ave',
-        city: 'Los Angeles',
-        state: 'CA',
-        postal_code: '90001',
-        country: 'USA',
-        tax_id: '98-7654321',
-        payment_terms: 45,
-        credit_limit: 25000,
         status: 'active',
         notes: 'VIP customer',
       });
@@ -143,10 +125,9 @@ describe('Customer Detail Route', () => {
       const result = await loader(createLoaderArgsWithParams(request, { id: '1' }));
 
       expect(result.customer.company_name).toBe('Full Data Corp');
-      expect(result.customer.contact_name).toBe('Jane Smith');
       expect(result.customer.email).toBe('jane@fulldata.com');
-      expect(result.customer.payment_terms).toBe(45);
-      expect(result.customer.credit_limit).toBe(25000);
+      expect(result.customer.phone).toBe('555-9999');
+      expect(result.customer.status).toBe('active');
       expect(result.customer.notes).toBe('VIP customer');
     });
   });

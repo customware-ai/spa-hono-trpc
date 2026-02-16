@@ -20,21 +20,12 @@ export const migration001 = {
     -- SALES & CRM TABLES
     -- ============================================================
 
-    -- Customers
+    -- Customers (simplified schema)
     CREATE TABLE IF NOT EXISTS customers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       company_name TEXT NOT NULL,
-      contact_name TEXT,
       email TEXT,
       phone TEXT,
-      address TEXT,
-      city TEXT,
-      state TEXT,
-      postal_code TEXT,
-      country TEXT DEFAULT 'USA',
-      tax_id TEXT,
-      payment_terms INTEGER DEFAULT 30,
-      credit_limit REAL DEFAULT 0,
       status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive')),
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -65,15 +65,8 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response>
       const formData = await request.formData();
       const data = Object.fromEntries(formData);
 
-      // Parse numeric fields
-      const customerData = {
-        ...data,
-        payment_terms: data.payment_terms ? parseInt(data.payment_terms as string) : 30,
-        credit_limit: data.credit_limit ? parseFloat(data.credit_limit as string) : 0,
-      };
-
       // Validate with Zod
-      const validation = CreateCustomerSchema.safeParse(customerData);
+      const validation = CreateCustomerSchema.safeParse(data);
       if (!validation.success) {
         return json(
           {
@@ -114,18 +107,8 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response>
       const formData = await request.formData();
       const data = Object.fromEntries(formData);
 
-      // Parse numeric fields
-      const customerData: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(data)) {
-        if (key === "payment_terms" || key === "credit_limit") {
-          customerData[key] = value ? parseFloat(value as string) : undefined;
-        } else {
-          customerData[key] = value;
-        }
-      }
-
       // Validate with Zod
-      const validation = UpdateCustomerSchema.safeParse(customerData);
+      const validation = UpdateCustomerSchema.safeParse(data);
       if (!validation.success) {
         return json(
           {

@@ -47,8 +47,8 @@ function RevenueGraph(): ReactElement {
     <div className="relative h-64 w-full mt-6">
       {/* Y-Axis Grid Lines */}
       <div className="absolute inset-0 flex flex-col justify-between text-xs text-surface-400 dark:text-surface-500 pointer-events-none z-0">
-        {[70, 52.5, 35, 17.5, 0].map((val, i) => (
-          <div key={i} className="flex items-center w-full">
+        {[70, 52.5, 35, 17.5, 0].map((val) => (
+          <div key={`y-axis-${val}`} className="flex items-center w-full">
             <span className="w-8 text-right mr-3 opacity-60">${Math.round(val)}k</span>
             <div className="flex-1 h-px bg-surface-100 dark:bg-surface-800/60 dashed" />
           </div>
@@ -98,8 +98,8 @@ function RevenueGraph(): ReactElement {
             const x = (i / (revenueData.length - 1)) * 100;
             const y = 100 - (d.value / max) * 100;
             return (
-              <div 
-                key={i}
+              <div
+                key={d.month}
                 className="absolute w-3 h-3 bg-white dark:bg-surface-900 border-2 border-primary-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 hover:scale-125 transition-transform cursor-pointer pointer-events-auto group"
                 style={{ left: `${x}%`, top: `${y}%` }}
               >

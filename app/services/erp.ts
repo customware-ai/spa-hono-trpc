@@ -158,11 +158,11 @@ export async function getCustomers(filters?: {
       params.push(filters.status);
     }
 
-    // Apply search filter (searches company name, contact name, email)
+    // Apply search filter (searches company name and email)
     if (filters?.search) {
-      sql += " AND (company_name LIKE ? OR contact_name LIKE ? OR email LIKE ?)";
+      sql += " AND (company_name LIKE ? OR email LIKE ?)";
       const searchParam = `%${filters.search}%`;
-      params.push(searchParam, searchParam, searchParam);
+      params.push(searchParam, searchParam);
     }
 
     sql += " ORDER BY company_name ASC";
@@ -226,25 +226,14 @@ export async function createCustomer(data: CreateCustomer): Promise<Result<Custo
     const { db } = await getDatabase();
 
     const sql = `
-      INSERT INTO customers (
-        company_name, contact_name, email, phone, address, city, state,
-        postal_code, country, tax_id, payment_terms, credit_limit, status, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO customers (company_name, email, phone, status, notes)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
     const params = [
       data.company_name,
-      data.contact_name || null,
       data.email || null,
       data.phone || null,
-      data.address || null,
-      data.city || null,
-      data.state || null,
-      data.postal_code || null,
-      data.country || "USA",
-      data.tax_id || null,
-      data.payment_terms || 30,
-      data.credit_limit || 0,
       data.status || "active",
       data.notes || null,
     ];
