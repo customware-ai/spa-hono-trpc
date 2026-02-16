@@ -1920,14 +1920,21 @@ export async function loader() {
 }
 ```
 
-##### 2. Type Generation System
+##### 2. Type Generation System (New in v7)
+
+React Router v7 auto-generates type declarations for each route in `.react-router/types/`. This is a new feature in v7 that provides full type safety for route modules.
 
 ```bash
 # Generate types for routes
-npx react-router typegen
+npm run typegen
 ```
 
 Provides type-safe `params`, `loaderData`, `actionData` via generated `Route` types.
+
+**IMPORTANT**: If you see errors like `Cannot find module './+types/...'`, run `npm run typegen` to generate the missing type files. This is required after:
+- Creating new route files
+- Renaming route files
+- Fresh clone/install
 
 ##### 3. Route Module API
 
