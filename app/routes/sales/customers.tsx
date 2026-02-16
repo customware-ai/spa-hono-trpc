@@ -15,6 +15,7 @@
 import type { ReactElement, JSX } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/customers";
 import { useLoaderData, useNavigate } from "react-router";
 import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -26,6 +27,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
+import { TableSkeleton } from "../../components/ui/LoadingSkeleton";
 import { getCustomers } from "../../services/erp";
 import type { Customer } from "../../schemas";
 
@@ -53,6 +55,40 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<{ custome
     customers: result.value,
     error: null,
   };
+}
+
+/**
+ * Client loader - enables fast client-side navigation
+ * On initial load: uses server data (SSR)
+ * On subsequent navigations: fetches directly on client (faster)
+ */
+export async function clientLoader({
+  serverLoader,
+}: Route.ClientLoaderArgs): Promise<{ customers: Customer[]; error: string | null }> {
+  return serverLoader();
+}
+
+// Enable client loader during hydration for consistent behavior
+clientLoader.hydrate = true as const;
+
+/**
+ * HydrateFallback - shown while clientLoader runs
+ */
+export function HydrateFallback(): ReactElement {
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Customers" },
+      ]}
+    >
+      <PageHeader
+        title="Customers"
+        description="Manage your customer relationships and contact information."
+      />
+      <TableSkeleton rows={8} columns={5} />
+    </PageLayout>
+  );
 }
 
 export default function CustomersPage(): ReactElement {

@@ -12,6 +12,7 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/customers.$id";
 import { useLoaderData } from "react-router";
 import { ShoppingBag, DollarSign, Activity, FileText, Users } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -19,6 +20,7 @@ import { PageHeader } from "../../components/layout/PageHeader";
 import { Card } from "../../components/ui/Card";
 import { Tabs } from "../../components/ui/Tabs";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { CardSkeleton, LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
 import { getCustomerById } from "../../services/erp";
 import type { Customer } from "../../schemas";
 
@@ -38,6 +40,50 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<{
   return {
     customer: result.value,
   };
+}
+
+/**
+ * Client loader - enables fast client-side navigation
+ */
+export async function clientLoader({
+  serverLoader,
+}: Route.ClientLoaderArgs): Promise<{ customer: Customer }> {
+  return serverLoader();
+}
+
+clientLoader.hydrate = true as const;
+
+/**
+ * HydrateFallback - shown while clientLoader runs
+ */
+export function HydrateFallback(): ReactElement {
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Customers", href: "/sales/customers" },
+        { label: "Loading..." },
+      ]}
+    >
+      <PageHeader title="Loading..." />
+      <div className="space-y-6">
+        <Card>
+          <LoadingSkeleton variant="rectangular" className="h-6 w-48 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i}>
+                <LoadingSkeleton variant="rectangular" className="h-4 w-24 mb-2" />
+                <LoadingSkeleton variant="rectangular" className="h-5 w-40" />
+              </div>
+            ))}
+          </div>
+        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardSkeleton count={3} />
+        </div>
+      </div>
+    </PageLayout>
+  );
 }
 
 export default function CustomerDetailPage(): ReactElement {

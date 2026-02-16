@@ -19,6 +19,7 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/leads";
 import { useLoaderData } from "react-router";
 import { LayoutGrid, List } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -26,6 +27,7 @@ import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { CardSkeleton } from "../../components/ui/LoadingSkeleton";
 import { getDemoLeads } from "../../services/erp";
 
 interface Lead {
@@ -62,6 +64,60 @@ export async function loader({ request: _request }: LoaderFunctionArgs): Promise
   };
 
   return { leadsByStatus };
+}
+
+/**
+ * Client loader - enables fast client-side navigation
+ */
+export async function clientLoader({
+  serverLoader,
+}: Route.ClientLoaderArgs): Promise<{
+  leadsByStatus: {
+    new: Lead[];
+    contacted: Lead[];
+    qualified: Lead[];
+    proposal: Lead[];
+    won: Lead[];
+    lost: Lead[];
+  };
+}> {
+  return serverLoader();
+}
+
+clientLoader.hydrate = true as const;
+
+/**
+ * HydrateFallback - shown while clientLoader runs
+ */
+export function HydrateFallback(): ReactElement {
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Leads" },
+      ]}
+    >
+      <PageHeader
+        title="Leads (Demo Data)"
+        description="Manage your sales pipeline and track lead progress."
+      />
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-4 min-w-max">
+          {["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"].map((title) => (
+            <div key={title} className="flex-1 min-w-[300px]">
+              <div className="bg-surface-50 dark:bg-surface-900 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-surface-300" />
+                  <span className="font-semibold text-surface-400">{title}</span>
+                </div>
+                <CardSkeleton count={2} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageLayout>
+  );
 }
 
 /**

@@ -13,6 +13,7 @@
 import type { ReactElement, JSX } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/quotes";
 import { useLoaderData } from "react-router";
 import { FileText } from "lucide-react";
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -24,6 +25,7 @@ import type { Status } from "../../components/ui/StatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Select } from "../../components/ui/Select";
 import { Input } from "../../components/ui/Input";
+import { TableSkeleton } from "../../components/ui/LoadingSkeleton";
 import { getDemoQuotes } from "../../services/erp";
 
 interface Quote extends Record<string, unknown> {
@@ -54,6 +56,37 @@ export async function loader({ request: _request }: LoaderFunctionArgs): Promise
   }));
 
   return { quotes };
+}
+
+/**
+ * Client loader - enables fast client-side navigation
+ */
+export async function clientLoader({
+  serverLoader,
+}: Route.ClientLoaderArgs): Promise<{ quotes: Quote[] }> {
+  return serverLoader();
+}
+
+clientLoader.hydrate = true as const;
+
+/**
+ * HydrateFallback - shown while clientLoader runs
+ */
+export function HydrateFallback(): ReactElement {
+  return (
+    <PageLayout
+      breadcrumbs={[
+        { label: "Sales & CRM", href: "/sales" },
+        { label: "Quotes" },
+      ]}
+    >
+      <PageHeader
+        title="Quotes (Demo Data)"
+        description="Create and manage sales quotations for your customers."
+      />
+      <TableSkeleton rows={8} columns={6} />
+    </PageLayout>
+  );
 }
 
 export default function QuotesPage(): ReactElement {
