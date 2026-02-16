@@ -4,6 +4,37 @@ This file provides guidance to LLMs when working with code in this repository.
 
 > **For project overview**: See [README.md](./README.md) for features and documentation.
 
+---
+
+## 📋 Quick Reference
+
+Jump to section:
+
+| Section | Description |
+|---------|-------------|
+| [Core Principles](#-core-principles) | Type safety, architecture, error handling, testing, UX |
+| [Commands](#commands) | npm scripts for dev, build, test, lint |
+| [Architecture](#architecture) | Layered architecture, data flow, type safety |
+| [Development Requirements](#development-requirements) | Non-negotiable rules, code style, patterns |
+| [Directory Structure](#directory-structure) | File organization and structure principles |
+| [Design System](#design-system) | Colors, typography, component patterns |
+| [UX Requirements](#-user-experience-ux-requirements) | Loading states, error handling, responsive design, animation |
+| [React Component Patterns](#react-component-patterns) | Component structure, route patterns |
+| [Testing Patterns](#testing-patterns) | Component and service testing |
+| [React Router v7 Reference](#react-router-v7-reference-guide) | Data loading, pending UI, optimistic UI, actions |
+| [Autonomous Task Workflow](#autonomous-task-workflow) | Context management, task completion |
+
+### Key Import Paths
+
+```typescript
+import { Button } from '~/components/ui/Button';
+import { getCustomers } from '~/services/erp';
+import { CustomerSchema } from '~/schemas/sales';
+import { getDatabase } from '~/db';
+```
+
+---
+
 ## 🎯 Core Principles
 
 This codebase follows strict architectural patterns and coding standards:
@@ -32,13 +63,45 @@ This codebase follows strict architectural patterns and coding standards:
 - Provide meaningful error messages
 - **See [Error Handling UX](#error-handling-ux-mandatory) for user-facing error patterns**
 
-### 4. **Testing Requirements**
+### 4. **Testing Requirements** 🚨 ENFORCED
 
-- All business logic must have tests
-- All UI components must have tests
-- Run the narrowest relevant check based on what changed (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated) when changes are made. No need to run checks for non-code-only changes (e.g. updating Markdown/docs, copy, comments, or other non-executable content).
-- Run `npm run check` at the very end only when multiple areas are updated and full validation is needed
-- Test coverage is mandatory, not optional
+> **CRITICAL**: All code changes MUST include corresponding tests. A task is NOT complete if tests are missing.
+
+**Mandatory Test Coverage:**
+
+- **Frontend changes** (routes, components, hooks, UI behavior) → MUST have component tests
+- **Backend changes** (services, schemas, db operations, loaders/actions) → MUST have unit/integration tests
+- **Bug fixes** → MUST have a test that reproduces the bug and verifies the fix
+- **New features** → MUST have tests covering happy paths AND error cases
+
+**Enforcement Rules:**
+
+1. **NO CODE WITHOUT TESTS**: If you modify or add code, you MUST add/update tests. No exceptions.
+2. **Tests before completion**: Never mark a task as complete without corresponding test coverage
+3. **Test the behavior, not the implementation**: Tests should verify what the code does, not how it does it
+4. **Run tests before finishing**: Always run `npm test` to verify all tests pass
+
+**What to test:**
+
+| Change Type | Required Tests |
+|-------------|----------------|
+| New component | Rendering, variants, props, interactions, accessibility |
+| New service function | Happy path, error cases, edge cases, validation |
+| Route loader/action | Data loading, error handling, form submission |
+| Bug fix | Test that reproduces the bug + verifies the fix |
+| Refactor | Ensure existing tests still pass (no new tests needed if behavior unchanged) |
+
+**Validation Commands:**
+
+```bash
+npm test                           # Run all tests
+npx vitest run tests/path/file.test.ts  # Run specific test file
+npm run check                      # Full validation (includes tests)
+```
+
+- Run the narrowest relevant check based on what changed
+- Run `npm run check` at the very end only when multiple areas are updated
+- No need to run checks for docs-only/non-code changes
 
 ### 5. **Code Quality Standards**
 
@@ -188,11 +251,13 @@ export default function CustomersPage(): ReactElement {
    - Always define Zod schemas for data validation
    - Derive TypeScript types from schemas using `z.infer<>`
 
-2. **Test Coverage**
-   - All code changes must include corresponding tests
-   - Tests must cover happy paths and error cases
+2. **Test Coverage** 🚨 MANDATORY
+   - **ALL frontend and backend code changes MUST include corresponding tests**
+   - A task is **NOT COMPLETE** if code changed but tests were not added/updated
+   - Tests must cover happy paths AND error cases
    - Place tests in `tests/` mirroring the source structure
-   - Run `npm test` to verify all tests pass
+   - Run `npm test` to verify all tests pass before completing any task
+   - **If you forget tests, you MUST go back and add them before marking complete**
 
 3. **Validation Before Completion**
    - Run checks only at the very end of the task (right before marking it complete). Use focused validation based on the scope of changes (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated, `npm run lint` for lint-focused refactors). Skip checks for non-code-only changes (e.g. Markdown/docs, copy, comments, or other non-executable content).
