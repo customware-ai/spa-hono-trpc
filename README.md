@@ -125,7 +125,7 @@ app/
 
 ## 🗄️ Database Architecture
 
-**Technology**: SQLite via sql.js (in-memory with file persistence to `database.db`)
+**Technology**: SQLite via sql.js (in-memory with file persistence to `../sqlite/database.db`)
 
 **Key Pattern**: All database operations go through `db.ts` (single source of truth for filesystem access)
 
@@ -152,11 +152,11 @@ app/
 
 ### Database Persistence
 
-The database persists to `database.db` in the project root.
+The database persists to `../sqlite/database.db` (outside the project directory). The `sqlite` directory is created automatically if it doesn't exist.
 
 **On startup:**
 
-- If `database.db` exists, it's loaded into memory
+- If `../sqlite/database.db` exists, it's loaded into memory
 - If not, migrations create a new database with tables
 
 **On mutations:**
@@ -167,7 +167,7 @@ The database persists to `database.db` in the project root.
 **To reset:**
 
 ```bash
-rm database.db
+rm ../sqlite/database.db
 npm run migrate
 npm run dev
 ```

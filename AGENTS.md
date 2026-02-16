@@ -230,7 +230,7 @@ export default function CustomersPage(): ReactElement {
 **CRITICAL**: `db.ts` is the ONLY file that:
 
 - Imports sql.js
-- Reads/writes `database.db` file
+- Reads/writes `../sqlite/database.db` file (outside project directory)
 - Manages database connection
 - Calls `saveDatabase()` after mutations
 
@@ -363,7 +363,7 @@ export async function createUser(data: unknown): Promise<Result<User, Error>> {
 
 #### Database & Migrations
 
-**Database Technology:** sql.js (SQLite in JavaScript) with file persistence to `database.db`
+**Database Technology:** sql.js (SQLite in JavaScript) with file persistence to `../sqlite/database.db` (outside project directory)
 
 **Critical Rules:**
 
@@ -399,7 +399,7 @@ When creating a new migration:
 2. **Run** the migration: `npm run migrate`
 3. **Verify** it ran successfully (check for errors in output)
 4. **Test** that it works:
-   - Check `database.db` file was updated
+   - Check `../sqlite/database.db` file was updated
    - Verify tables/columns were created correctly
    - Write/update tests for any new database operations
 

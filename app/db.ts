@@ -16,7 +16,8 @@ export type SqlValue = number | string | Uint8Array | null;
 let db: Database | null = null;
 let SQL: SqlJsStatic | null = null;
 
-const DB_PATH = path.join(process.cwd(), "database.db");
+const SQLITE_DIR = path.join(process.cwd(), "..", "sqlite");
+const DB_PATH = path.join(SQLITE_DIR, "database.db");
 
 export async function saveDatabase(): Promise<void> {
   if (!db) return;
@@ -38,6 +39,11 @@ export async function initializeDatabase(): Promise<{
   if (db && SQL) return { db, SQL };
 
   SQL = await initSqlJs();
+
+  // Ensure the sqlite directory exists
+  if (!fs.existsSync(SQLITE_DIR)) {
+    fs.mkdirSync(SQLITE_DIR, { recursive: true });
+  }
 
   // Load database from file if it exists, otherwise create new
   if (fs.existsSync(DB_PATH)) {

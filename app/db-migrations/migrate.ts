@@ -16,13 +16,23 @@
  * - Supports rollback functionality
  */
 
-import { existsSync, copyFileSync } from "fs";
+import { existsSync, copyFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { getDatabase } from "../db";
 import type { Database } from "sql.js";
 
-const DB_PATH = join(process.cwd(), "database.db");
+const SQLITE_DIR = join(process.cwd(), "..", "sqlite");
+const DB_PATH = join(SQLITE_DIR, "database.db");
 const MIGRATIONS_TABLE = "schema_migrations";
+
+/**
+ * Ensures the sqlite directory exists before any database operations.
+ */
+function ensureSqliteDir(): void {
+  if (!existsSync(SQLITE_DIR)) {
+    mkdirSync(SQLITE_DIR, { recursive: true });
+  }
+}
 
 /**
  * Interface for a migration definition
@@ -40,6 +50,8 @@ interface Migration {
  */
 async function saveDatabase(db: Database): Promise<void> {
   const fs = await import("fs");
+  // Ensure the sqlite directory exists before saving
+  ensureSqliteDir();
   const data = db.export();
   const buffer = Buffer.from(data);
   fs.writeFileSync(DB_PATH, buffer);
@@ -89,6 +101,8 @@ export class MigrationRunner {
    * Create a backup of the database file before running migrations
    */
   private backupDatabase(): void {
+    // Ensure the sqlite directory exists
+    ensureSqliteDir();
     if (!existsSync(DB_PATH)) return;
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

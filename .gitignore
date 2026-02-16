@@ -2,7 +2,8 @@
 .env
 /node_modules/
 
-# Never commit database files
+# Database files are stored outside the project in ../sqlite/
+# This entry is kept for safety in case files are accidentally created here
 database.db
 database.db.*
 
