@@ -42,7 +42,7 @@ describe('Card', () => {
     it('should apply base styles', () => {
       render(<Card data-testid="card">Content</Card>);
       const card = screen.getByTestId('card');
-      expect(card.className).toContain('rounded-xl');
+      expect(card.className).toContain('rounded-lg');
       expect(card.className).toContain('p-5');
     });
   });
@@ -52,7 +52,7 @@ describe('Card', () => {
       render(<Card className="custom-class" data-testid="card">Content</Card>);
       const card = screen.getByTestId('card');
       expect(card.className).toContain('custom-class');
-      expect(card.className).toContain('rounded-xl');
+      expect(card.className).toContain('rounded-lg');
     });
   });
 

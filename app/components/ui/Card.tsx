@@ -25,7 +25,7 @@ export function Card({
   children,
   ...props
 }: CardProps): ReactElement {
-  const baseStyles = 'rounded-xl p-5';
+  const baseStyles = 'rounded-lg p-5';
 
   return (
     <div className={clsx(baseStyles, variantStyles[variant], className)} {...props}>

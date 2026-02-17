@@ -14,7 +14,7 @@ vi.mock('~/services/erp', () => ({
   getCustomerById: vi.fn(),
 }));
 
-import { loader } from '~/routes/sales/customers.$id';
+import { loader } from '~/routes/customers.$id';
 import * as erp from '~/services/erp';
 
 /**
@@ -28,7 +28,7 @@ function createLoaderArgsWithParams(
     request,
     params,
     context: {},
-    unstable_pattern: '/sales/customers/:id',
+    unstable_pattern: '/customers/:id',
   } as LoaderFunctionArgs;
 }
 
@@ -59,7 +59,7 @@ describe('Customer Detail Route', () => {
       const mockCustomer = createMockCustomer({ id: 42, company_name: 'Acme Corp' });
       vi.mocked(erp.getCustomerById).mockResolvedValue(ok(mockCustomer));
 
-      const request = new Request('http://localhost/sales/customers/42');
+      const request = new Request('http://localhost/customers/42');
       const result = await loader(createLoaderArgsWithParams(request, { id: '42' }));
 
       expect(result.customer).toEqual(mockCustomer);
@@ -69,7 +69,7 @@ describe('Customer Detail Route', () => {
     it('should throw 404 response when customer not found', async () => {
       vi.mocked(erp.getCustomerById).mockResolvedValue(ok(null));
 
-      const request = new Request('http://localhost/sales/customers/999');
+      const request = new Request('http://localhost/customers/999');
 
       await expect(
         loader(createLoaderArgsWithParams(request, { id: '999' }))
@@ -92,7 +92,7 @@ describe('Customer Detail Route', () => {
         })
       );
 
-      const request = new Request('http://localhost/sales/customers/1');
+      const request = new Request('http://localhost/customers/1');
 
       await expect(
         loader(createLoaderArgsWithParams(request, { id: '1' }))
@@ -103,7 +103,7 @@ describe('Customer Detail Route', () => {
       const mockCustomer = createMockCustomer();
       vi.mocked(erp.getCustomerById).mockResolvedValue(ok(mockCustomer));
 
-      const request = new Request('http://localhost/sales/customers/123');
+      const request = new Request('http://localhost/customers/123');
       await loader(createLoaderArgsWithParams(request, { id: '123' }));
 
       // Should be called with number, not string
@@ -121,7 +121,7 @@ describe('Customer Detail Route', () => {
       });
       vi.mocked(erp.getCustomerById).mockResolvedValue(ok(mockCustomer));
 
-      const request = new Request('http://localhost/sales/customers/1');
+      const request = new Request('http://localhost/customers/1');
       const result = await loader(createLoaderArgsWithParams(request, { id: '1' }));
 
       expect(result.customer.company_name).toBe('Full Data Corp');

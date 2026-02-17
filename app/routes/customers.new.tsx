@@ -2,31 +2,24 @@
  * New Customer Form Route
  *
  * Form for creating new customer records.
- * Features:
- * - Comprehensive form with all customer fields
- * - Client-side validation with Zod
- * - Server-side validation and database insertion
- * - Error handling and success feedback
- * - Redirects to customer list after successful creation
  */
 
 import type { ReactElement } from "react";
 import { useState } from "react";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, useNavigate, useActionData, useRouteError, isRouteErrorResponse } from "react-router";
-import { PageLayout } from "../../components/layout/PageLayout";
-import { PageHeader } from "../../components/layout/PageHeader";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Input, Textarea } from "../../components/ui/Input";
-import { ErrorDisplay } from "../../components/ui/ErrorDisplay";
-import { createCustomer } from "../../services/erp";
-import { CreateCustomerSchema } from "../../schemas";
+import { PageLayout } from "../components/layout/PageLayout";
+import { PageHeader } from "../components/layout/PageHeader";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { Input, Textarea } from "../components/ui/Input";
+import { ErrorDisplay } from "../components/ui/ErrorDisplay";
+import { createCustomer } from "../services/erp";
+import { CreateCustomerSchema } from "../schemas";
 import { redirect } from "react-router";
 
 /**
  * Action function - handles form submission
- * Validates data and creates customer in database
  */
 export async function action({ request }: ActionFunctionArgs): Promise<Response | {
   error: string;
@@ -63,8 +56,8 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response 
     };
   }
 
-  // Redirect to customers list on success
-  return redirect("/sales/customers");
+  // Redirect to customers list (home) on success
+  return redirect("/home");
 }
 
 /**
@@ -88,8 +81,7 @@ export function ErrorBoundary(): ReactElement {
   return (
     <PageLayout
       breadcrumbs={[
-        { label: "Sales & CRM", href: "/sales" },
-        { label: "Customers", href: "/sales/customers" },
+        { label: "Customers", href: "/home" },
         { label: "New Customer" },
       ]}
     >
@@ -113,8 +105,7 @@ export default function NewCustomerPage(): ReactElement {
   return (
     <PageLayout
       breadcrumbs={[
-        { label: "Sales & CRM", href: "/sales" },
-        { label: "Customers", href: "/sales/customers" },
+        { label: "Customers", href: "/home" },
         { label: "New Customer" },
       ]}
     >
@@ -213,7 +204,7 @@ export default function NewCustomerPage(): ReactElement {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/sales/customers")}
+                onClick={() => navigate("/home")}
                 disabled={isSubmitting}
               >
                 Cancel

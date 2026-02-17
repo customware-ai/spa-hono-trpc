@@ -115,7 +115,7 @@ describe('Input', () => {
       render(<Input data-testid="input" />);
       const input = screen.getByTestId('input');
       expect(input.className).toContain('w-full');
-      expect(input.className).toContain('rounded-lg');
+      expect(input.className).toContain('rounded-md');
     });
   });
 });

@@ -14,7 +14,7 @@ vi.mock('~/services/erp', () => ({
   createCustomer: vi.fn(),
 }));
 
-import { action } from '~/routes/sales/customers.new';
+import { action } from '~/routes/customers.new';
 import * as erp from '~/services/erp';
 
 /**
@@ -60,7 +60,7 @@ describe('New Customer Route', () => {
         email: 'new@corp.com',
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });
@@ -70,7 +70,7 @@ describe('New Customer Route', () => {
       // Should redirect on success
       expect(result).toBeInstanceOf(Response);
       expect((result as Response).status).toBe(302);
-      expect((result as Response).headers.get('Location')).toBe('/sales/customers');
+      expect((result as Response).headers.get('Location')).toBe('/home');
     });
 
     it('should return validation error for missing company_name', async () => {
@@ -79,7 +79,7 @@ describe('New Customer Route', () => {
         // company_name is missing
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });
@@ -104,7 +104,7 @@ describe('New Customer Route', () => {
         email: 'test@test.com',
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });
@@ -124,7 +124,7 @@ describe('New Customer Route', () => {
         // Only required field, all others use defaults
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });
@@ -151,7 +151,7 @@ describe('New Customer Route', () => {
         notes: 'Important customer',
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });
@@ -179,7 +179,7 @@ describe('New Customer Route', () => {
         phone: '',
       });
 
-      const request = new Request('http://localhost/sales/customers/new', {
+      const request = new Request('http://localhost/customers/new', {
         method: 'POST',
         body: formData,
       });

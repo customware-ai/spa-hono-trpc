@@ -1,121 +1,82 @@
 /**
- * Tests for Dashboard/Home Page
+ * Tests for Home/Customers Page Route
  *
- * Tests the Dashboard component rendering and interactions.
+ * Tests the loader function for the customers list page (now home).
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
-import type { Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ok, err } from 'neverthrow';
+import { createLoaderArgs } from '../helpers';
+import type { Customer } from '~/schemas';
 
-// We need to test the component in isolation since it uses useNavigate
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
-  return {
-    ...actual,
-    useNavigate: (): Mock => vi.fn(),
-    useRouteError: (): Error => new Error('Test error'),
-    isRouteErrorResponse: (): boolean => false,
+// Mock the ERP service module
+vi.mock('~/services/erp', () => ({
+  getCustomers: vi.fn(),
+}));
+
+import { loader } from '~/routes/home';
+import * as erp from '~/services/erp';
+
+function createMockCustomer(overrides?: Partial<Customer>): Customer {
+  const baseCustomer: Customer = {
+    id: 1,
+    company_name: 'Acme Corp',
+    email: 'info@acme.com',
+    phone: null,
+    status: 'active',
+    notes: null,
+    created_at: '2024-01-01T00:00:00.000Z',
+    updated_at: '2024-01-01T00:00:00.000Z',
   };
-});
+  return { ...baseCustomer, ...overrides };
+}
 
-// Import after mocking
-import Dashboard, { ErrorBoundary } from '~/routes/home';
-
-describe('Dashboard Page', () => {
-  describe('Dashboard component', () => {
-    it('should render dashboard title', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Dashboard (Demo)')).toBeInTheDocument();
-    });
-
-    it('should render demo metrics', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Total Revenue (Demo)')).toBeInTheDocument();
-      expect(screen.getByText('New Leads (Demo)')).toBeInTheDocument();
-      expect(screen.getByText('Active Orders (Demo)')).toBeInTheDocument();
-    });
-
-    it('should render metric values', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('$124,590')).toBeInTheDocument();
-      expect(screen.getByText('48')).toBeInTheDocument();
-      expect(screen.getByText('23')).toBeInTheDocument();
-    });
-
-    it('should render revenue chart section', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Revenue Trend')).toBeInTheDocument();
-      expect(screen.getByText('Monthly revenue performance')).toBeInTheDocument();
-    });
-
-    it('should render sales pipeline section', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Sales Pipeline (Demo)')).toBeInTheDocument();
-      expect(screen.getByText('Current opportunities by stage')).toBeInTheDocument();
-    });
-
-    it('should render quick actions', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Add Customer')).toBeInTheDocument();
-      expect(screen.getByText('Create Quote')).toBeInTheDocument();
-    });
-
-    it('should render pipeline stages', () => {
-      render(
-        <MemoryRouter>
-          <Dashboard />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Qualified')).toBeInTheDocument();
-      expect(screen.getByText('Proposal')).toBeInTheDocument();
-      expect(screen.getByText('Negotiation')).toBeInTheDocument();
-      expect(screen.getByText('Closed Won')).toBeInTheDocument();
-    });
+describe('Home Route (Customers)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe('ErrorBoundary', () => {
-    it('should render error display', () => {
-      render(
-        <MemoryRouter>
-          <ErrorBoundary />
-        </MemoryRouter>
-      );
+  describe('loader', () => {
+    it('should return all customers when no filters are provided', async () => {
+      const mockCustomers: Customer[] = [createMockCustomer()];
+      vi.mocked(erp.getCustomers).mockResolvedValue(ok(mockCustomers));
 
-      // Should show the error title
-      expect(screen.getByRole('heading', { name: /something went wrong/i })).toBeInTheDocument();
+      const request = new Request('http://localhost/home');
+      const result = await loader(createLoaderArgs(request));
+
+      expect(result.customers).toEqual(mockCustomers);
+      expect(result.error).toBeNull();
+      expect(erp.getCustomers).toHaveBeenCalledWith({
+        search: undefined,
+        status: undefined,
+      });
+    });
+
+    it('should pass search and status parameters from URL', async () => {
+      const mockCustomers: Customer[] = [createMockCustomer()];
+      vi.mocked(erp.getCustomers).mockResolvedValue(ok(mockCustomers));
+
+      const request = new Request('http://localhost/home?search=test&status=inactive');
+      const result = await loader(createLoaderArgs(request));
+
+      expect(result.customers).toEqual(mockCustomers);
+      expect(erp.getCustomers).toHaveBeenCalledWith({
+        search: 'test',
+        status: 'inactive',
+      });
+    });
+
+    it('should return error message when database fetch fails', async () => {
+      vi.mocked(erp.getCustomers).mockResolvedValue(err({
+        type: 'DATABASE_ERROR' as const,
+        message: 'Fetch failed',
+      }));
+
+      const request = new Request('http://localhost/home');
+      const result = await loader(createLoaderArgs(request));
+
+      expect(result.customers).toEqual([]);
+      expect(result.error).toBe('Fetch failed');
     });
   });
 });
