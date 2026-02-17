@@ -1,1 +1,0 @@
-task_complete --taskFilePath "/Users/sravansuresh/Developer/Cohesiv/react-app-db/AGENTS.md" --status completed --summary "Simplified customer detail page to remove tabs and show only overview content. Regenerated types and verified all tests pass."

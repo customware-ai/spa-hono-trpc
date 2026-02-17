@@ -204,7 +204,7 @@ export async function createCustomer(
   return ok(result.value);
 }
 
-// 4. Route loader uses typed result (routes/customers.tsx)
+// 4. Route loader uses typed result (routes/home.tsx)
 export async function loader(): Promise<{
   customers: Customer[];
   error: string | null;
@@ -459,11 +459,13 @@ import initSqlJs from "sql.js"; // NEVER DO THIS
 ```
 app/
 ├── components/
-│   ├── layout/          # Sidebar, TopBar, PageLayout, PageHeader
+│   ├── layout/          # TopBar, PageLayout, PageHeader
 │   ├── ui/              # Reusable UI components (Button, Card, Input, etc.)
 │   └── [feature]/       # Feature-specific components
 ├── routes/
-│   ├── dashboard.tsx    # Main dashboard/home route
+│   ├── home.tsx         # Main customers list route (dashboard)
+│   ├── customers.new.tsx # Create customer route
+│   ├── customers.$id.tsx # Customer detail route
 │   └── [feature]/       # Feature module routes (nested)
 ├── services/
 │   └── [service].ts     # Business logic & CRUD operations
@@ -517,8 +519,7 @@ tests/                   # Test files mirror app/ structure
 
 - `PageLayout` - Main page wrapper with breadcrumbs
 - `PageHeader` - Consistent page titles and actions
-- `Sidebar` - Left navigation
-- `TopBar` - Top navigation and user menu
+- `TopBar` - Top navigation, logo, and theme toggle
 
 ---
 
@@ -960,41 +961,36 @@ This gives you:
 The `loader` function runs on the server for initial page loads and on the client for navigations (via automatic fetch). Server-only code is automatically stripped from client bundles.
 
 ```typescript
-// routes/products.$productId.tsx
-import type { Route } from "./+types/products.$productId";
-import { getProduct } from "~/services/products";
+// routes/customers.$id.tsx
+import type { Route } from "./+types/customers.$id";
+import { getCustomerById } from "~/services/erp";
 
 /**
  * Server loader - runs on server for SSR and via fetch for client navigation.
  * This code is stripped from client bundles - safe to use server-only APIs.
  */
 export async function loader({ params }: Route.LoaderArgs): Promise<{
-  product: Product;
-  error: string | null;
+  customer: Customer;
 }> {
-  const result = await getProduct(params.productId);
+  const result = await getCustomerById(params.id);
 
   if (result.isErr()) {
     // Return error in data, not thrown - allows graceful handling
-    return { product: null, error: result.error.message };
+    throw new Response("Not Found", { status: 404 });
   }
 
-  return { product: result.value, error: null };
+  return { customer: result.value };
 }
 
-export default function ProductPage({
+export default function CustomerPage({
   loaderData,
 }: Route.ComponentProps): ReactElement {
-  const { product, error } = loaderData;
-
-  if (error) {
-    return <ErrorDisplay error={{ message: error }} variant="page" />;
-  }
+  const { customer } = loaderData;
 
   return (
     <PageLayout>
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
+      <h1>{customer.company_name}</h1>
+      <p>{customer.email}</p>
     </PageLayout>
   );
 }
@@ -1005,8 +1001,8 @@ export default function ProductPage({
 Use `clientLoader` for browser-only data fetching patterns. **MUST include `HydrateFallback` to show loading state.**
 
 ```typescript
-// routes/dashboard.tsx
-import type { Route } from "./+types/dashboard";
+// routes/home.tsx
+import type { Route } from "./+types/home";
 
 /**
  * Client loader - runs only in the browser.
@@ -1014,10 +1010,10 @@ import type { Route } from "./+types/dashboard";
  */
 export async function clientLoader({
   params,
-}: Route.ClientLoaderArgs): Promise<{ analytics: AnalyticsData }> {
-  const res = await fetch(`/api/analytics`);
-  const analytics = await res.json();
-  return { analytics };
+}: Route.ClientLoaderArgs): Promise<{ customers: Customer[] }> {
+  const res = await fetch(`/api/customers`);
+  const customers = await res.json();
+  return { customers };
 }
 
 /**
@@ -1030,22 +1026,17 @@ export function HydrateFallback(): ReactElement {
     <PageLayout>
       <div className="space-y-4">
         <LoadingSkeleton variant="rectangular" className="h-8 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LoadingSkeleton variant="rectangular" className="h-32" />
-          <LoadingSkeleton variant="rectangular" className="h-32" />
-          <LoadingSkeleton variant="rectangular" className="h-32" />
-        </div>
-        <LoadingSkeleton variant="rectangular" className="h-64" />
+        <TableSkeleton rows={10} columns={4} />
       </div>
     </PageLayout>
   );
 }
 
-export default function Dashboard({
+export default function Home({
   loaderData,
 }: Route.ComponentProps): ReactElement {
-  const { analytics } = loaderData;
-  return <AnalyticsDashboard data={analytics} />;
+  const { customers } = loaderData;
+  return <CustomerList data={customers} />;
 }
 ```
 
@@ -1054,20 +1045,20 @@ export default function Dashboard({
 Combine both loaders for optimal SSR with client-side enhancements.
 
 ```typescript
-// routes/products.tsx
-import type { Route } from "./+types/products";
+// routes/home.tsx
+import type { Route } from "./+types/home";
 
 // Server loader for SSR
-export async function loader(): Promise<{ products: Product[] }> {
-  const result = await getProducts();
-  return { products: result.isOk() ? result.value : [] };
+export async function loader(): Promise<{ customers: Customer[] }> {
+  const result = await getCustomers();
+  return { customers: result.isOk() ? result.value : [] };
 }
 
 // Client loader augments server data
 export async function clientLoader({
   serverLoader,
 }: Route.ClientLoaderArgs): Promise<{
-  products: Product[];
+  customers: Customer[];
   userFavorites: number[];
 }> {
   const serverData = await serverLoader();
@@ -1080,7 +1071,7 @@ export async function clientLoader({
 clientLoader.hydrate = true as const;
 
 export function HydrateFallback(): ReactElement {
-  return <CardSkeleton count={6} />;
+  return <TableSkeleton rows={10} />;
 }
 ```
 
@@ -1092,7 +1083,6 @@ export function HydrateFallback(): ReactElement {
 // ✅ CORRECT - Explicit return type
 export async function loader({ params }: Route.LoaderArgs): Promise<{
   customer: Customer | null;
-  orders: Order[];
   error: string | null;
 }> {
   // Implementation
@@ -1167,7 +1157,7 @@ function NavigationAwareComponent(): ReactElement {
   const isNavigating = Boolean(navigation.location);
 
   // Check for specific form submission
-  const isSubmittingToNewProject = navigation.formAction === "/projects/new";
+  const isSubmittingToNewCustomer = navigation.formAction === "/customers/new";
 
   // Get form data being submitted
   const submittedData = navigation.formData;
@@ -1188,15 +1178,15 @@ Show pending state on individual navigation links:
 ```typescript
 import { NavLink } from "react-router";
 
-function Sidebar(): ReactElement {
+function TopBar(): ReactElement {
   return (
-    <nav className="space-y-1">
+    <nav className="flex gap-4">
       <NavLink
-        to="/dashboard"
+        to="/home"
         viewTransition // Enable view transitions
         className={({ isActive, isPending }) =>
           clsx(
-            "flex items-center gap-3 px-4 py-2 rounded-lg transition-colors",
+            "flex items-center gap-2 px-3 py-2 rounded-md transition-colors",
             isActive && "bg-primary-100 text-primary-700",
             isPending && "opacity-50 pointer-events-none"
           )
@@ -1204,23 +1194,7 @@ function Sidebar(): ReactElement {
       >
         {({ isPending }) => (
           <>
-            <DashboardIcon className="w-5 h-5" />
-            <span>Dashboard</span>
-            {isPending && <Spinner size="sm" className="ml-auto" />}
-          </>
-        )}
-      </NavLink>
-
-      <NavLink
-        to="/customers"
-        viewTransition
-        style={({ isPending }) => ({
-          opacity: isPending ? 0.5 : 1,
-        })}
-      >
-        {({ isPending }) => (
-          <>
-            Customers
+            <span>Customers</span>
             {isPending && <Spinner size="sm" />}
           </>
         )}
@@ -1308,25 +1282,25 @@ Use when the form submission should navigate to a new page:
 ```typescript
 import { Form, useNavigation } from "react-router";
 
-function NewProjectForm(): ReactElement {
+function NewCustomerForm(): ReactElement {
   const navigation = useNavigation();
 
   // Check if THIS specific form is being submitted
-  const isSubmitting = navigation.formAction === "/projects/new";
+  const isSubmitting = navigation.formAction === "/customers/new";
 
   return (
-    <Form method="post" action="/projects/new" className="space-y-4">
-      <Input name="title" label="Project Title" required disabled={isSubmitting} />
-      <Textarea name="description" label="Description" disabled={isSubmitting} />
+    <Form method="post" action="/customers/new" className="space-y-4">
+      <Input name="company_name" label="Company Name" required disabled={isSubmitting} />
+      <Textarea name="notes" label="Notes" disabled={isSubmitting} />
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? (
           <>
             <Spinner size="sm" className="mr-2" />
-            Creating Project...
+            Creating Customer...
           </>
         ) : (
-          "Create Project"
+          "Create Customer"
         )}
       </Button>
     </Form>
@@ -1339,18 +1313,18 @@ function NewProjectForm(): ReactElement {
 Use `useFetcher` for independent form states:
 
 ```typescript
-function TaskList({ tasks }: { tasks: Task[] }): ReactElement {
+function CustomerList({ customers }: { customers: Customer[] }): ReactElement {
   return (
     <ul className="space-y-2">
-      {tasks.map((task) => (
-        <TaskItem key={task.id} task={task} />
+      {customers.map((customer) => (
+        <CustomerItem key={customer.id} customer={customer} />
       ))}
     </ul>
   );
 }
 
-function TaskItem({ task }: { task: Task }): ReactElement {
-  // Each task has its own fetcher - independent states
+function CustomerItem({ customer }: { customer: Customer }): ReactElement {
+  // Each customer has its own fetcher - independent states
   const deleteFetcher = useFetcher();
   const toggleFetcher = useFetcher();
 
@@ -1359,21 +1333,21 @@ function TaskItem({ task }: { task: Task }): ReactElement {
 
   return (
     <li className={clsx("flex items-center gap-3 p-3", isDeleting && "opacity-50")}>
-      {/* Toggle completion */}
-      <toggleFetcher.Form method="post" action={`/tasks/${task.id}/toggle`}>
+      {/* Toggle status */}
+      <toggleFetcher.Form method="post" action={`/customers/${customer.id}/toggle`}>
         <button
           type="submit"
           disabled={isToggling}
           className="w-6 h-6 rounded border flex items-center justify-center"
         >
-          {isToggling ? <Spinner size="sm" /> : task.completed && <CheckIcon />}
+          {isToggling ? <Spinner size="sm" /> : customer.status === 'active' && <CheckIcon />}
         </button>
       </toggleFetcher.Form>
 
-      <span className={clsx(task.completed && "line-through")}>{task.title}</span>
+      <span className={clsx(customer.status === 'inactive' && "text-gray-400")}>{customer.company_name}</span>
 
       {/* Delete button */}
-      <deleteFetcher.Form method="post" action={`/tasks/${task.id}/delete`}>
+      <deleteFetcher.Form method="post" action={`/customers/${customer.id}/delete`}>
         <button
           type="submit"
           disabled={isDeleting}
@@ -1400,47 +1374,47 @@ When a form is submitted, `fetcher.formData` contains the pending form values. U
 ```typescript
 import { useFetcher } from "react-router";
 
-function TaskItem({ task }: { task: Task }): ReactElement {
+function CustomerItem({ customer }: { customer: Customer }): ReactElement {
   const fetcher = useFetcher();
 
-  // Optimistically determine completion state
-  let isComplete = task.status === "complete";
+  // Optimistically determine status
+  let isActive = customer.status === "active";
 
   // If form is being submitted, use the pending value instead
   if (fetcher.formData) {
-    isComplete = fetcher.formData.get("status") === "complete";
+    isActive = fetcher.formData.get("status") === "active";
   }
 
   return (
     <div className={clsx(
       "flex items-center gap-3 p-3 rounded-lg transition-all",
-      isComplete && "bg-green-50"
+      isActive && "bg-green-50"
     )}>
-      <fetcher.Form method="post" action={`/tasks/${task.id}/toggle`}>
+      <fetcher.Form method="post" action={`/customers/${customer.id}/toggle`}>
         <input
           type="hidden"
           name="status"
-          value={isComplete ? "incomplete" : "complete"}
+          value={isActive ? "inactive" : "active"}
         />
         <button
           type="submit"
           className={clsx(
             "w-6 h-6 rounded-full border-2 flex items-center justify-center",
             "transition-colors",
-            isComplete
+            isActive
               ? "bg-green-500 border-green-500 text-white"
               : "border-surface-300 hover:border-green-400"
           )}
         >
-          {isComplete && <CheckIcon className="w-4 h-4" />}
+          {isActive && <CheckIcon className="w-4 h-4" />}
         </button>
       </fetcher.Form>
 
       <span className={clsx(
         "transition-all",
-        isComplete && "line-through text-surface-500"
+        !isActive && "text-surface-500"
       )}>
-        {task.title}
+        {customer.company_name}
       </span>
     </div>
   );
@@ -1450,66 +1424,66 @@ function TaskItem({ task }: { task: Task }): ReactElement {
 #### Optimistic List Updates
 
 ```typescript
-function ContactList({ contacts }: { contacts: Contact[] }): ReactElement {
+function CustomerList({ customers }: { customers: Customer[] }): ReactElement {
   const fetcher = useFetcher();
 
-  // Optimistically filter out deleted contacts
-  const visibleContacts = contacts.filter((contact) => {
-    // If this contact is being deleted, hide it immediately
+  // Optimistically filter out deleted customers
+  const visibleCustomers = customers.filter((customer) => {
+    // If this customer is being deleted, hide it immediately
     if (
       fetcher.formData &&
       fetcher.formData.get("intent") === "delete" &&
-      fetcher.formData.get("contactId") === String(contact.id)
+      fetcher.formData.get("customerId") === String(customer.id)
     ) {
       return false;
     }
     return true;
   });
 
-  // Optimistically add new contacts
-  let pendingContact: Partial<Contact> | null = null;
+  // Optimistically add new customers
+  let pendingCustomer: Partial<Customer> | null = null;
   if (
     fetcher.formData &&
     fetcher.formData.get("intent") === "create"
   ) {
-    pendingContact = {
+    pendingCustomer = {
       id: -1, // Temporary ID
-      name: fetcher.formData.get("name") as string,
+      company_name: fetcher.formData.get("company_name") as string,
       email: fetcher.formData.get("email") as string,
     };
   }
 
   return (
     <div className="space-y-4">
-      {/* Add contact form */}
+      {/* Add customer form */}
       <fetcher.Form method="post" className="flex gap-2">
         <input type="hidden" name="intent" value="create" />
-        <Input name="name" placeholder="Name" required />
+        <Input name="company_name" placeholder="Company Name" required />
         <Input name="email" placeholder="Email" type="email" required />
         <Button type="submit" disabled={fetcher.state !== "idle"}>
           {fetcher.state !== "idle" ? <Spinner size="sm" /> : "Add"}
         </Button>
       </fetcher.Form>
 
-      {/* Contact list with optimistic updates */}
+      {/* Customer list with optimistic updates */}
       <ul className="space-y-2">
-        {/* Show pending contact at top with loading indicator */}
-        {pendingContact && (
+        {/* Show pending customer at top with loading indicator */}
+        {pendingCustomer && (
           <li className="flex items-center gap-3 p-3 bg-surface-50 animate-pulse">
-            <span>{pendingContact.name}</span>
-            <span className="text-surface-500">{pendingContact.email}</span>
+            <span>{pendingCustomer.company_name}</span>
+            <span className="text-surface-500">{pendingCustomer.email}</span>
             <Spinner size="sm" className="ml-auto" />
           </li>
         )}
 
-        {visibleContacts.map((contact) => (
-          <li key={contact.id} className="flex items-center gap-3 p-3">
-            <span>{contact.name}</span>
-            <span className="text-surface-500">{contact.email}</span>
+        {visibleCustomers.map((customer) => (
+          <li key={customer.id} className="flex items-center gap-3 p-3">
+            <span>{customer.company_name}</span>
+            <span className="text-surface-500">{customer.email}</span>
 
             <fetcher.Form method="post" className="ml-auto">
               <input type="hidden" name="intent" value="delete" />
-              <input type="hidden" name="contactId" value={contact.id} />
+              <input type="hidden" name="customerId" value={customer.id} />
               <button
                 type="submit"
                 className="text-red-500 hover:text-red-700"
@@ -1528,14 +1502,14 @@ function ContactList({ contacts }: { contacts: Contact[] }): ReactElement {
 #### Optimistic Form Field Updates
 
 ```typescript
-function EditableTitle({ item }: { item: Item }): ReactElement {
+function EditableTitle({ customer }: { customer: Customer }): ReactElement {
   const fetcher = useFetcher();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Optimistically show the new title
-  const displayTitle = fetcher.formData
-    ? (fetcher.formData.get("title") as string)
-    : item.title;
+  // Optimistically show the new company name
+  const displayName = fetcher.formData
+    ? (fetcher.formData.get("company_name") as string)
+    : customer.company_name;
 
   const isSaving = fetcher.state !== "idle";
 
@@ -1543,13 +1517,13 @@ function EditableTitle({ item }: { item: Item }): ReactElement {
     return (
       <fetcher.Form
         method="post"
-        action={`/items/${item.id}/update`}
+        action={`/customers/${customer.id}/update`}
         onSubmit={() => setIsEditing(false)}
         className="flex gap-2"
       >
         <Input
-          name="title"
-          defaultValue={item.title}
+          name="company_name"
+          defaultValue={customer.company_name}
           autoFocus
           className="flex-1"
         />
@@ -1571,7 +1545,7 @@ function EditableTitle({ item }: { item: Item }): ReactElement {
   return (
     <div className="flex items-center gap-2 group">
       <h2 className={clsx("text-xl font-semibold", isSaving && "opacity-50")}>
-        {displayTitle}
+        {displayName}
       </h2>
       {isSaving && <Spinner size="sm" />}
       <button
