@@ -12,8 +12,8 @@ import { AlertTriangle } from "lucide-react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { logger } from "./utils/logger";
-import { Card, CardContent } from "./components/ui/card";
-import { Button } from "./components/ui/button";
+import { Card, CardContent } from "./components/ui/Card";
+import { Button } from "./components/ui/Button";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

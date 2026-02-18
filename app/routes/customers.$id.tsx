@@ -11,10 +11,10 @@ import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router
 import { ShoppingBag, DollarSign, Activity } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { StatusBadge } from "../components/ui/status-badge";
-import { CardSkeleton, LoadingSkeleton } from "../components/ui/loading-skeleton";
-import { ErrorDisplay } from "../components/ui/error-display";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import { StatusBadge } from "../components/ui/StatusBadge";
+import { CardSkeleton, LoadingSkeleton } from "../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../components/ui/ErrorDisplay";
 import { getCustomerById } from "../services/erp";
 import type { Customer } from "../schemas";
 

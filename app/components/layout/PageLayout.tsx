@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { Link } from "react-router";
 import { Moon, Sun } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/ui/Button";
 
 interface Breadcrumb {
   label: string;

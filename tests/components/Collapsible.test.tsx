@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
 import {
   Collapsible,
-} from '~/components/ui/collapsible';
+} from '~/components/ui/Collapsible';
 
 describe('Collapsible', () => {
   describe('rendering', () => {

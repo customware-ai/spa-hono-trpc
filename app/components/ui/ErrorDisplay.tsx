@@ -1,6 +1,6 @@
 import { AlertCircle, RefreshCw, ArrowLeft, X } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Button } from "~/components/ui/Button";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/Alert";
 import { cn } from "~/lib/utils";
 import type { ReactElement, ReactNode } from "react";
 

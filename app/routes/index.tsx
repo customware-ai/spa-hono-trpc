@@ -11,15 +11,15 @@ import {
 import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Button } from "../components/ui/button";
-import { DataTable } from "../components/ui/data-table";
-import type { Column } from "../components/ui/data-table";
-import { StatusBadge } from "../components/ui/status-badge";
-import { EmptyState } from "../components/ui/empty-state";
-import { Input } from "../components/ui/input";
-import { Select } from "../components/ui/select";
-import { TableSkeleton } from "../components/ui/loading-skeleton";
-import { ErrorDisplay } from "../components/ui/error-display";
+import { Button } from "../components/ui/Button";
+import { DataTable } from "../components/ui/DataTable";
+import type { Column } from "../components/ui/DataTable";
+import { StatusBadge } from "../components/ui/StatusBadge";
+import { EmptyState } from "../components/ui/EmptyState";
+import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
+import { TableSkeleton } from "../components/ui/LoadingSkeleton";
+import { ErrorDisplay } from "../components/ui/ErrorDisplay";
 import { getCustomers } from "../services/erp";
 import type { Customer } from "../schemas";
 

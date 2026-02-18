@@ -1,7 +1,7 @@
 import { Info, CheckCircle, AlertTriangle, AlertCircle, X } from 'lucide-react';
 import { cn } from "~/lib/utils";
 import type { HTMLAttributes, ReactElement, ReactNode } from 'react';
-import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Alert, AlertDescription } from "~/components/ui/Alert";
 
 type BannerVariant = 'info' | 'success' | 'warning' | 'danger';
 

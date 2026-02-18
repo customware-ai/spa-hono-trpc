@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ErrorDisplay, getUserFriendlyError } from '~/components/ui/error-display';
+import { ErrorDisplay, getUserFriendlyError } from '~/components/ui/ErrorDisplay';
 
 describe('ErrorDisplay', () => {
   describe('getUserFriendlyError helper', () => {

@@ -7,8 +7,8 @@
 
 import type { ReactElement } from "react";
 import { Mail, Phone } from "lucide-react";
-import { Card } from "../ui/card";
-import { StatusBadge } from "../ui/status-badge";
+import { Card } from "../ui/Card";
+import { StatusBadge } from "../ui/StatusBadge";
 import type { Customer } from "../../schemas";
 
 interface CustomerCardProps {

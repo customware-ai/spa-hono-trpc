@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Banner } from '~/components/ui/banner';
+import { Banner } from '~/components/ui/Banner';
 
 describe('Banner', () => {
   describe('rendering', () => {
