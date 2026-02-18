@@ -12,13 +12,8 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  /**
-   * Landing Page
-   */
-  index("routes/landing.tsx"),
-
-  // Main dashboard (Customers list is now the home)
-  route("home", "routes/home.tsx"),
+  //Customers list
+  index("routes/index.tsx"),
 
   // Customer Routes
   route("customers/new", "routes/customers.new.tsx"),

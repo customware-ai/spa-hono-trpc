@@ -1,8 +1,13 @@
 import type { ReactElement, JSX } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import type { Route } from "./+types/home";
-import { useLoaderData, useNavigate, useRouteError, isRouteErrorResponse } from "react-router";
+import type { Route } from "./+types/index";
+import {
+  useLoaderData,
+  useNavigate,
+  useRouteError,
+  isRouteErrorResponse,
+} from "react-router";
 import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -22,11 +27,15 @@ import type { Customer } from "../schemas";
  * Loader function - fetches customers from database
  * Runs on the server before rendering the page
  */
-export async function loader({ request }: LoaderFunctionArgs): Promise<{ customers: Customer[]; error: string | null }> {
+export async function loader({ request }: LoaderFunctionArgs): Promise<{
+  customers: Customer[];
+  error: string | null;
+}> {
   // Get query parameters from URL for filtering
   const url = new URL(request.url);
   const search = url.searchParams.get("search") || undefined;
-  const status = (url.searchParams.get("status") as "active" | "inactive") || undefined;
+  const status =
+    (url.searchParams.get("status") as "active" | "inactive") || undefined;
 
   // Fetch customers with filters
   const result = await getCustomers({ search, status });
@@ -51,7 +60,10 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<{ custome
  */
 export async function clientLoader({
   serverLoader,
-}: Route.ClientLoaderArgs): Promise<{ customers: Customer[]; error: string | null }> {
+}: Route.ClientLoaderArgs): Promise<{
+  customers: Customer[];
+  error: string | null;
+}> {
   return serverLoader();
 }
 
@@ -105,7 +117,7 @@ export function ErrorBoundary(): ReactElement {
   );
 }
 
-export default function HomePage(): ReactElement {
+export default function IndexPage(): ReactElement {
   const { customers, error } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
@@ -120,7 +132,8 @@ export default function HomePage(): ReactElement {
       customer.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || customer.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -141,7 +154,11 @@ export default function HomePage(): ReactElement {
       sortable: true,
       render: (value: unknown): JSX.Element => {
         const email = value as string | null;
-        return email ? <span className="font-mono text-xs">{email}</span> : <span className="text-muted-foreground">—</span>;
+        return email ? (
+          <span className="font-mono text-xs">{email}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
       },
     },
     {
@@ -149,7 +166,11 @@ export default function HomePage(): ReactElement {
       label: "Phone",
       render: (value: unknown): JSX.Element => {
         const phone = value as string | null;
-        return phone ? <span className="font-mono text-xs">{phone}</span> : <span className="text-muted-foreground">—</span>;
+        return phone ? (
+          <span className="font-mono text-xs">{phone}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
       },
     },
     {
@@ -158,7 +179,12 @@ export default function HomePage(): ReactElement {
       render: (value: unknown): JSX.Element => {
         const status = value as string;
         return (
-          <StatusBadge status={(status === "active" || status === "inactive") ? status : "info"} showDot />
+          <StatusBadge
+            status={
+              status === "active" || status === "inactive" ? status : "info"
+            }
+            showDot
+          />
         );
       },
     },
@@ -188,10 +214,7 @@ export default function HomePage(): ReactElement {
         title="Customers"
         description="Manage your customer relationships and contact information."
         actions={
-          <Button
-            variant="default"
-            onClick={() => navigate("/customers/new")}
-          >
+          <Button variant="default" onClick={() => navigate("/customers/new")}>
             <Plus className="w-4 h-4 mr-2" />
             New Customer
           </Button>
@@ -234,9 +257,7 @@ export default function HomePage(): ReactElement {
       {/* Customers Table */}
       {filteredCustomers.length === 0 ? (
         <EmptyState
-          icon={
-            <Users className="w-24 h-24 text-muted" />
-          }
+          icon={<Users className="w-24 h-24 text-muted" />}
           title="No customers found"
           description={
             searchQuery || statusFilter !== "all"
@@ -245,7 +266,10 @@ export default function HomePage(): ReactElement {
           }
           action={
             !searchQuery && statusFilter === "all" ? (
-              <Button variant="default" onClick={() => navigate("/customers/new")}>
+              <Button
+                variant="default"
+                onClick={() => navigate("/customers/new")}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Customer
               </Button>
