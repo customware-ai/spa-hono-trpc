@@ -1,5 +1,5 @@
 /**
- * Tests for Home/Customers Page Route
+ * Tests for Customers Page Route
  *
  * Tests the loader function for the customers list page (now home).
  */
@@ -41,7 +41,7 @@ describe("Home Route (Customers)", () => {
       const mockCustomers: Customer[] = [createMockCustomer()];
       vi.mocked(erp.getCustomers).mockResolvedValue(ok(mockCustomers));
 
-      const request = new Request("http://localhost/home");
+      const request = new Request("http://localhost");
       const result = await loader(createLoaderArgs(request));
 
       expect(result.customers).toEqual(mockCustomers);
@@ -57,7 +57,7 @@ describe("Home Route (Customers)", () => {
       vi.mocked(erp.getCustomers).mockResolvedValue(ok(mockCustomers));
 
       const request = new Request(
-        "http://localhost/home?search=test&status=inactive",
+        "http://localhost?search=test&status=inactive",
       );
       const result = await loader(createLoaderArgs(request));
 
@@ -76,7 +76,7 @@ describe("Home Route (Customers)", () => {
         }),
       );
 
-      const request = new Request("http://localhost/home");
+      const request = new Request("http://localhost");
       const result = await loader(createLoaderArgs(request));
 
       expect(result.customers).toEqual([]);
