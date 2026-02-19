@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactElement } from "react";
 import {
   isRouteErrorResponse,
@@ -28,7 +30,11 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }): ReactElement {
+export function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}): ReactElement {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -64,7 +70,9 @@ export default function App(): ReactElement {
   return <Outlet />;
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement {
+export function ErrorBoundary({
+  error,
+}: Route.ErrorBoundaryProps): ReactElement {
   // Log error for monitoring
   logger.error("Application error", {
     message: error instanceof Error ? error.message : "Unknown error",
@@ -77,17 +85,16 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md text-center">
           <CardContent className="pt-6">
-            <h1 className="text-6xl font-bold text-destructive mb-4">{error.status}</h1>
+            <h1 className="text-6xl font-bold text-destructive mb-4">
+              {error.status}
+            </h1>
             <p className="text-lg text-muted-foreground mb-2">
               {error.status === 404 ? "Page Not Found" : "Something went wrong"}
             </p>
             <p className="text-muted-foreground">
               {error.statusText || "The requested page could not be found."}
             </p>
-            <Button
-              asChild
-              className="mt-6"
-            >
+            <Button asChild className="mt-6">
               <a href="/">Go Home</a>
             </Button>
           </CardContent>
@@ -103,7 +110,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h1 className="text-2xl font-bold text-destructive mb-2">Application Error</h1>
+          <h1 className="text-2xl font-bold text-destructive mb-2">
+            Application Error
+          </h1>
           <p className="text-muted-foreground mb-4">
             An unexpected error occurred. Please try again.
           </p>
@@ -112,10 +121,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement
               {error.stack}
             </pre>
           )}
-          <Button
-            asChild
-            className="mt-6"
-          >
+          <Button asChild className="mt-6">
             <a href="/">Go Home</a>
           </Button>
         </CardContent>

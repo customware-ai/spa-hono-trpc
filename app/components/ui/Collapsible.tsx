@@ -1,5 +1,5 @@
 import * as React from "react"
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+import { Collapsible as CollapsiblePrimitive } from "radix-ui"
 import { ChevronDown } from "lucide-react"
 import { cn } from "~/lib/utils"
 

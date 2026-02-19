@@ -1,7 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { DirectionProvider as BaseDirectionProvider, useDirection as useBaseDirection } from "@radix-ui/react-direction"
+import { Direction } from "radix-ui"
+
+const BaseDirectionProvider = Direction.DirectionProvider
+const useBaseDirection = Direction.useDirection
 
 function DirectionProvider({
   dir,
