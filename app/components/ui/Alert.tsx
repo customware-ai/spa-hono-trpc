@@ -31,64 +31,66 @@ const iconMap = {
   info: Info,
 }
 
-export interface AlertProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {
+export interface AlertProps extends React.ComponentProps<"div">, VariantProps<typeof alertVariants> {
   title?: string
   icon?: React.ReactNode
   dismissible?: boolean
   onDismiss?: () => void
 }
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  ({ className, variant = "default", title, icon, dismissible, onDismiss, children, ...props }, ref) => {
-    const IconComponent = iconMap[variant as keyof typeof iconMap] || iconMap.default
-    
-    return (
-      <div
-        ref={ref}
-        role="alert"
-        className={cn(alertVariants({ variant }), className)}
-        {...props}
-      >
-        {icon !== null && (icon || <IconComponent className="h-4 w-4" />)}
-        {title && <AlertTitle>{title}</AlertTitle>}
-        <AlertDescription>{children}</AlertDescription>
-        {dismissible && onDismiss && (
-          <button
-            onClick={onDismiss}
-            className="absolute right-3 top-3 p-1 rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            aria-label="Dismiss"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    )
-  }
-)
-Alert.displayName = "Alert"
+function Alert({
+  className,
+  variant = "default",
+  title,
+  icon,
+  dismissible,
+  onDismiss,
+  children,
+  ...props
+}: AlertProps): React.ReactElement {
+  const IconComponent = iconMap[variant as keyof typeof iconMap] || iconMap.default
 
-const AlertTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h5
-    ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
-    {...props}
-  />
-))
-AlertTitle.displayName = "AlertTitle"
+  return (
+    <div
+      data-slot="alert"
+      role="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    >
+      {icon !== null && (icon || <IconComponent className="h-4 w-4" />)}
+      {title && <AlertTitle>{title}</AlertTitle>}
+      <AlertDescription>{children}</AlertDescription>
+      {dismissible && onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="absolute right-3 top-3 p-1 rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          aria-label="Dismiss"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
+}
 
-const AlertDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
-    {...props}
-  />
-))
-AlertDescription.displayName = "AlertDescription"
+function AlertTitle({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
+  return (
+    <h5
+      data-slot="alert-title"
+      className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+      {...props}
+    />
+  )
+}
+
+function AlertDescription({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
+  return (
+    <div
+      data-slot="alert-description"
+      className={cn("text-sm [&_p]:leading-relaxed", className)}
+      {...props}
+    />
+  )
+}
 
 export { Alert, AlertTitle, AlertDescription }

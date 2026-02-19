@@ -1,4 +1,4 @@
-import type { ReactElement, JSX } from "react";
+import type { ReactElement } from "react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/index";
@@ -12,14 +12,19 @@ import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
-import { DataTable } from "../components/ui/DataTable";
-import type { Column } from "../components/ui/DataTable";
-import { StatusBadge } from "../components/ui/StatusBadge";
-import { EmptyState } from "../components/ui/EmptyState";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
-import { TableSkeleton } from "../components/ui/LoadingSkeleton";
-import { ErrorDisplay } from "../components/ui/ErrorDisplay";
+import { Badge } from "../components/ui/Badge";
+import { Skeleton } from "../components/ui/Skeleton";
+import { Alert } from "../components/ui/Alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/Table";
 import { getCustomers } from "../services/erp";
 import type { Customer } from "../schemas";
 
@@ -80,7 +85,12 @@ export function HydrateFallback(): ReactElement {
         title="Customers"
         description="Manage your customer relationships and contact information."
       />
-      <TableSkeleton rows={8} columns={5} />
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full" />
+        {["r1","r2","r3","r4","r5","r6","r7","r8"].map((key) => (
+          <Skeleton key={key} className="h-12 w-full" />
+        ))}
+      </div>
     </PageLayout>
   );
 }
@@ -90,12 +100,6 @@ export function HydrateFallback(): ReactElement {
  */
 export function ErrorBoundary(): ReactElement {
   const error = useRouteError();
-
-  const errorType = isRouteErrorResponse(error)
-    ? error.status === 404
-      ? "NOT_FOUND"
-      : "SERVER_ERROR"
-    : "SERVER_ERROR";
 
   const errorMessage = isRouteErrorResponse(error)
     ? error.statusText || "An error occurred"
@@ -109,10 +113,7 @@ export function ErrorBoundary(): ReactElement {
         title="Customers"
         description="Manage your customer relationships and contact information."
       />
-      <ErrorDisplay
-        error={{ type: errorType, message: errorMessage }}
-        variant="page"
-      />
+      <Alert variant="destructive">{errorMessage}</Alert>
     </PageLayout>
   );
 }
@@ -138,76 +139,6 @@ export default function IndexPage(): ReactElement {
     return matchesSearch && matchesStatus;
   });
 
-  // Define table columns
-  const columns: Column<Customer>[] = [
-    {
-      key: "company_name",
-      label: "Company",
-      sortable: true,
-      render: (value: unknown): JSX.Element => (
-        <div className="font-semibold text-foreground">{value as string}</div>
-      ),
-    },
-    {
-      key: "email",
-      label: "Email",
-      sortable: true,
-      render: (value: unknown): JSX.Element => {
-        const email = value as string | null;
-        return email ? (
-          <span className="font-mono text-xs">{email}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
-      },
-    },
-    {
-      key: "phone",
-      label: "Phone",
-      render: (value: unknown): JSX.Element => {
-        const phone = value as string | null;
-        return phone ? (
-          <span className="font-mono text-xs">{phone}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (value: unknown): JSX.Element => {
-        const status = value as string;
-        return (
-          <StatusBadge
-            status={
-              status === "active" || status === "inactive" ? status : "info"
-            }
-            showDot
-          />
-        );
-      },
-    },
-    {
-      key: "actions",
-      label: "",
-      render: (_value: unknown, row: Customer): JSX.Element => (
-        <div className="flex items-center justify-end">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e): void => {
-              e.stopPropagation();
-              void navigate(`/customers/${row.id}`);
-            }}
-          >
-            View
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <PageLayout breadcrumbs={[{ label: "Customers" }]}>
       <PageHeader
@@ -223,11 +154,9 @@ export default function IndexPage(): ReactElement {
 
       {/* Error Alert */}
       {error && (
-        <ErrorDisplay
-          error={{ type: "DATABASE_ERROR", message: error }}
-          variant="inline"
-          className="mb-6"
-        />
+        <Alert variant="destructive" className="mb-6">
+          {error}
+        </Alert>
       )}
 
       {/* Filters */}
@@ -254,35 +183,95 @@ export default function IndexPage(): ReactElement {
         </div>
       </div>
 
-      {/* Customers Table */}
+      {/* Customers Table or Empty State */}
       {filteredCustomers.length === 0 ? (
-        <EmptyState
-          icon={<Users className="w-24 h-24 text-muted" />}
-          title="No customers found"
-          description={
-            searchQuery || statusFilter !== "all"
-              ? "Try adjusting your filters to find what you're looking for."
-              : "Get started by creating your first customer record."
-          }
-          action={
-            !searchQuery && statusFilter === "all" ? (
-              <Button
-                variant="default"
-                onClick={() => navigate("/customers/new")}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Customer
-              </Button>
-            ) : undefined
-          }
-        />
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+          <Users className="w-16 h-16 text-muted-foreground" />
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold">No customers found</h3>
+            <p className="text-muted-foreground text-sm">
+              {searchQuery || statusFilter !== "all"
+                ? "Try adjusting your filters to find what you're looking for."
+                : "Get started by creating your first customer record."}
+            </p>
+          </div>
+          {!searchQuery && statusFilter === "all" && (
+            <Button variant="default" onClick={() => navigate("/customers/new")}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Customer
+            </Button>
+          )}
+        </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredCustomers}
-          keyExtractor={(row) => row.id.toString()}
-          onRowClick={(row) => void navigate(`/customers/${row.id}`)}
-        />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Company</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCustomers.map((customer) => (
+              <TableRow
+                key={customer.id}
+                className="cursor-pointer"
+                onClick={() => void navigate(`/customers/${customer.id}`)}
+              >
+                <TableCell>
+                  <div className="font-semibold text-foreground">
+                    {customer.company_name}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {customer.email ? (
+                    <span className="font-mono text-xs">{customer.email}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {customer.phone ? (
+                    <span className="font-mono text-xs">{customer.phone}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={customer.status === "active" ? "success" : "secondary"}
+                    className="gap-1.5"
+                  >
+                    <span
+                      className={
+                        customer.status === "active"
+                          ? "size-1.5 rounded-full bg-green-600"
+                          : "size-1.5 rounded-full bg-gray-400"
+                      }
+                    />
+                    {customer.status === "active" ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void navigate(`/customers/${customer.id}`);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {/* Summary Stats */}

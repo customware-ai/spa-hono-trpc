@@ -8,7 +8,7 @@
 import type { ReactElement } from "react";
 import { Mail, Phone } from "lucide-react";
 import { Card } from "../ui/Card";
-import { StatusBadge } from "../ui/StatusBadge";
+import { Badge } from "../ui/Badge";
 import type { Customer } from "../../schemas";
 
 interface CustomerCardProps {
@@ -29,7 +29,19 @@ export function CustomerCard({
         <div className="flex-1">
           <h3 className="font-semibold text-surface-900 mb-1">{customer.company_name}</h3>
         </div>
-        <StatusBadge status={(customer.status === "active" || customer.status === "inactive") ? customer.status : "info"} showDot />
+        <Badge
+          variant={customer.status === "active" ? "success" : "secondary"}
+          className="gap-1.5"
+        >
+          <span
+            className={
+              customer.status === "active"
+                ? "size-1.5 rounded-full bg-green-600"
+                : "size-1.5 rounded-full bg-gray-400"
+            }
+          />
+          {customer.status === "active" ? "Active" : "Inactive"}
+        </Badge>
       </div>
 
       <div className="space-y-1 text-sm">
@@ -46,7 +58,6 @@ export function CustomerCard({
           </div>
         )}
       </div>
-
     </Card>
   );
 }

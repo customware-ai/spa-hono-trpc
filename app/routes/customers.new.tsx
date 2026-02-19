@@ -16,7 +16,7 @@ import { Input } from "../components/ui/Input";
 import { Textarea } from "../components/ui/Textarea";
 import { Select } from "../components/ui/Select";
 import { Label } from "../components/ui/Label";
-import { ErrorDisplay } from "../components/ui/ErrorDisplay";
+import { Alert } from "../components/ui/Alert";
 import { createCustomer } from "../services/erp";
 import { CreateCustomerSchema } from "../schemas";
 import { redirect } from "react-router";
@@ -69,12 +69,6 @@ export async function action({ request }: ActionFunctionArgs): Promise<Response 
 export function ErrorBoundary(): ReactElement {
   const error = useRouteError();
 
-  const errorType = isRouteErrorResponse(error)
-    ? error.status === 404
-      ? "NOT_FOUND"
-      : "SERVER_ERROR"
-    : "SERVER_ERROR";
-
   const errorMessage = isRouteErrorResponse(error)
     ? error.statusText || "An error occurred"
     : error instanceof Error
@@ -92,10 +86,7 @@ export function ErrorBoundary(): ReactElement {
         title="New Customer"
         description="Create a new customer record with contact and billing information."
       />
-      <ErrorDisplay
-        error={{ type: errorType, message: errorMessage }}
-        variant="page"
-      />
+      <Alert variant="destructive">{errorMessage}</Alert>
     </PageLayout>
   );
 }
@@ -119,14 +110,9 @@ export default function NewCustomerPage(): ReactElement {
 
       {/* Error Alert */}
       {actionData?.error && (
-        <ErrorDisplay
-          error={{
-            type: actionData.error === "Validation failed" ? "VALIDATION_ERROR" : "DATABASE_ERROR",
-            message: actionData.error,
-          }}
-          variant="inline"
-          className="mb-6"
-        />
+        <Alert variant="destructive" className="mb-6">
+          {actionData.error}
+        </Alert>
       )}
 
       <Card>

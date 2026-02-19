@@ -9,7 +9,7 @@ const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
 
 const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent
 
-export interface CollapsibleProps extends React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Root> {
+export interface CollapsibleProps extends React.ComponentProps<typeof CollapsiblePrimitive.Root> {
   trigger?: React.ReactNode
   children: React.ReactNode
   showIcon?: boolean
@@ -17,19 +17,27 @@ export interface CollapsibleProps extends React.ComponentPropsWithoutRef<typeof 
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  onOpenChange?: (open: boolean) => void
 }
 
-const Collapsible = React.forwardRef<
-  React.ElementRef<typeof CollapsiblePrimitive.Root>,
-  CollapsibleProps
->(({ trigger, children, showIcon = true, iconPosition = "left", className, triggerClassName, contentClassName, ...props }, ref) => {
+function Collapsible({
+  trigger,
+  children,
+  showIcon = true,
+  iconPosition = "left",
+  className,
+  triggerClassName,
+  contentClassName,
+  onOpenChange,
+  ...props
+}: CollapsibleProps): React.ReactElement {
   const [isOpen, setIsOpen] = React.useState(props.defaultOpen || false)
 
   // If no trigger is provided, act as the primitive root
   if (!trigger) {
     return (
       <CollapsibleRoot
-        ref={ref}
+        data-slot="collapsible"
         className={cn(className)}
         {...props}
       >
@@ -40,13 +48,14 @@ const Collapsible = React.forwardRef<
 
   return (
     <CollapsibleRoot
-      ref={ref}
+      data-slot="collapsible"
       open={props.open !== undefined ? props.open : isOpen}
-      onOpenChange={props.onOpenChange || setIsOpen}
+      onOpenChange={(open) => (onOpenChange ?? setIsOpen)(open)}
       className={cn("w-full border rounded-lg overflow-hidden", className)}
       {...props}
     >
       <CollapsibleTrigger
+        data-slot="collapsible-trigger"
         className={cn(
           "flex w-full items-center justify-between p-4 font-medium transition-all hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180",
           triggerClassName
@@ -59,9 +68,10 @@ const Collapsible = React.forwardRef<
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent
+        data-slot="collapsible-content"
         className={cn(
-            "overflow-hidden text-sm transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down",
-            contentClassName
+          "overflow-hidden text-sm transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down",
+          contentClassName
         )}
         role="region"
       >
@@ -71,7 +81,6 @@ const Collapsible = React.forwardRef<
       </CollapsibleContent>
     </CollapsibleRoot>
   )
-})
-Collapsible.displayName = "Collapsible"
+}
 
 export { Collapsible, CollapsibleTrigger, CollapsibleContent, CollapsibleRoot }

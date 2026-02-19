@@ -60,7 +60,7 @@ describe('Badge', () => {
     it('should apply padding styles', () => {
       render(<Badge>Test</Badge>);
       const badge = screen.getByText('Test');
-      expect(badge.className).toContain('px-2.5');
+      expect(badge.className).toContain('px-2');
       expect(badge.className).toContain('py-0.5');
     });
 

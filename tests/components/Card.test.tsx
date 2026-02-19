@@ -16,19 +16,6 @@ describe('Card', () => {
     });
   });
 
-  describe('enhanced card props', () => {
-    it('should apply title and description when provided', () => {
-      render(<Card title="Test Title" description="Test Description">Content</Card>);
-      expect(screen.getByText('Test Title')).toBeInTheDocument();
-      expect(screen.getByText('Test Description')).toBeInTheDocument();
-    });
-
-    it('should apply action when provided', () => {
-      render(<Card action={<button>Action</button>}>Content</Card>);
-      expect(screen.getByRole('button', { name: 'Action' })).toBeInTheDocument();
-    });
-  });
-
   describe('base styles', () => {
     it('should apply base styles', () => {
       render(<Card data-testid="card">Content</Card>);
@@ -65,10 +52,10 @@ describe('CardHeader', () => {
   });
 
   describe('layout', () => {
-    it('should have flex layout', () => {
+    it('should have grid layout', () => {
       render(<CardHeader data-testid="header">Test</CardHeader>);
       const header = screen.getByTestId('header');
-      expect(header.className).toContain('flex');
+      expect(header.className).toContain('grid');
     });
   });
 
@@ -77,7 +64,7 @@ describe('CardHeader', () => {
       render(<CardHeader className="custom-class" data-testid="header">Test</CardHeader>);
       const header = screen.getByTestId('header');
       expect(header.className).toContain('custom-class');
-      expect(header.className).toContain('flex');
+      expect(header.className).toContain('grid');
     });
   });
 });

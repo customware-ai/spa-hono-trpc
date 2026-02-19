@@ -12,9 +12,9 @@ import { ShoppingBag, DollarSign, Activity } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
-import { StatusBadge } from "../components/ui/StatusBadge";
-import { CardSkeleton, LoadingSkeleton } from "../components/ui/LoadingSkeleton";
-import { ErrorDisplay } from "../components/ui/ErrorDisplay";
+import { Badge } from "../components/ui/Badge";
+import { Skeleton } from "../components/ui/Skeleton";
+import { Alert } from "../components/ui/Alert";
 import { getCustomerById } from "../services/erp";
 import type { Customer } from "../schemas";
 
@@ -62,19 +62,26 @@ export function HydrateFallback(): ReactElement {
       <div className="space-y-6">
         <Card>
           <CardContent className="pt-6">
-            <LoadingSkeleton variant="rectangular" className="h-6 w-48 mb-4" />
+            <Skeleton className="h-6 w-48 mb-4" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["field-1", "field-2", "field-3", "field-4", "field-5", "field-6", "field-7", "field-8"].map((fieldId) => (
-                <div key={fieldId}>
-                  <LoadingSkeleton variant="rectangular" className="h-4 w-24 mb-2" />
-                  <LoadingSkeleton variant="rectangular" className="h-5 w-40" />
+              {["company", "status", "email", "phone", "city", "country", "website", "notes"].map((field) => (
+                <div key={field}>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-5 w-40" />
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <CardSkeleton count={3} />
+          {["orders", "outstanding", "revenue"].map((stat) => (
+            <Card key={stat}>
+              <CardContent className="pt-6">
+                <Skeleton className="h-4 w-32 mb-3" />
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </PageLayout>
@@ -86,12 +93,6 @@ export function HydrateFallback(): ReactElement {
  */
 export function ErrorBoundary(): ReactElement {
   const error = useRouteError();
-
-  const errorType = isRouteErrorResponse(error)
-    ? error.status === 404
-      ? "NOT_FOUND"
-      : "SERVER_ERROR"
-    : "SERVER_ERROR";
 
   const errorMessage = isRouteErrorResponse(error)
     ? error.statusText || "An error occurred"
@@ -107,10 +108,7 @@ export function ErrorBoundary(): ReactElement {
       ]}
     >
       <PageHeader title="Customer" />
-      <ErrorDisplay
-        error={{ type: errorType, message: errorMessage }}
-        variant="page"
-      />
+      <Alert variant="destructive">{errorMessage}</Alert>
     </PageLayout>
   );
 }
@@ -157,7 +155,19 @@ export default function CustomerDetailPage(): ReactElement {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="mt-1">
-                  <StatusBadge status={(customer.status === "active" || customer.status === "inactive") ? customer.status : "info"} showDot />
+                  <Badge
+                    variant={customer.status === "active" ? "success" : "secondary"}
+                    className="gap-1.5"
+                  >
+                    <span
+                      className={
+                        customer.status === "active"
+                          ? "size-1.5 rounded-full bg-green-600"
+                          : "size-1.5 rounded-full bg-gray-400"
+                      }
+                    />
+                    {customer.status === "active" ? "Active" : "Inactive"}
+                  </Badge>
                 </div>
               </div>
               <div>
