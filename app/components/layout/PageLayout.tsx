@@ -121,7 +121,10 @@ export function PageLayout({
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
 
           {breadcrumbs.length > 0 && (
             <Breadcrumb>

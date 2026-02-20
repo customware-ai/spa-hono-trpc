@@ -87,7 +87,7 @@ export function HydrateFallback(): ReactElement {
       />
       <div className="space-y-3">
         <Skeleton className="h-10 w-full" />
-        {["r1","r2","r3","r4","r5","r6","r7","r8"].map((key) => (
+        {["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"].map((key) => (
           <Skeleton key={key} className="h-12 w-full" />
         ))}
       </div>
@@ -196,7 +196,10 @@ export default function IndexPage(): ReactElement {
             </p>
           </div>
           {!searchQuery && statusFilter === "all" && (
-            <Button variant="default" onClick={() => navigate("/customers/new")}>
+            <Button
+              variant="default"
+              onClick={() => navigate("/customers/new")}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Create Your First Customer
             </Button>
@@ -241,7 +244,9 @@ export default function IndexPage(): ReactElement {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={customer.status === "active" ? "success" : "secondary"}
+                    variant={
+                      customer.status === "active" ? "success" : "secondary"
+                    }
                     className="gap-1.5"
                   >
                     <span

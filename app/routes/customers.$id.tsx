@@ -7,11 +7,20 @@
 import type { ReactElement } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/customers.$id";
-import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
+import {
+  useLoaderData,
+  useRouteError,
+  isRouteErrorResponse,
+} from "react-router";
 import { ShoppingBag, DollarSign, Activity } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Alert } from "../components/ui/Alert";
@@ -53,10 +62,7 @@ clientLoader.hydrate = true as const;
 export function HydrateFallback(): ReactElement {
   return (
     <PageLayout
-      breadcrumbs={[
-        { label: "Customers", href: "/" },
-        { label: "Loading..." },
-      ]}
+      breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Loading..." }]}
     >
       <PageHeader title="Loading..." />
       <div className="space-y-6">
@@ -64,7 +70,16 @@ export function HydrateFallback(): ReactElement {
           <CardContent className="pt-6">
             <Skeleton className="h-6 w-48 mb-4" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["company", "status", "email", "phone", "city", "country", "website", "notes"].map((field) => (
+              {[
+                "company",
+                "status",
+                "email",
+                "phone",
+                "city",
+                "country",
+                "website",
+                "notes",
+              ].map((field) => (
                 <div key={field}>
                   <Skeleton className="h-4 w-24 mb-2" />
                   <Skeleton className="h-5 w-40" />
@@ -102,10 +117,7 @@ export function ErrorBoundary(): ReactElement {
 
   return (
     <PageLayout
-      breadcrumbs={[
-        { label: "Customers", href: "/" },
-        { label: "Error" },
-      ]}
+      breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Error" }]}
     >
       <PageHeader title="Customer" />
       <Alert variant="destructive">{errorMessage}</Alert>
@@ -121,7 +133,9 @@ export default function CustomerDetailPage(): ReactElement {
       <PageLayout>
         <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Customer not found</p>
+            <p className="text-center text-muted-foreground">
+              Customer not found
+            </p>
           </CardContent>
         </Card>
       </PageLayout>
@@ -149,14 +163,20 @@ export default function CustomerDetailPage(): ReactElement {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Company Name</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Company Name
+                </label>
                 <p className="font-semibold">{customer.company_name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Status</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Status
+                </label>
                 <div className="mt-1">
                   <Badge
-                    variant={customer.status === "active" ? "success" : "secondary"}
+                    variant={
+                      customer.status === "active" ? "success" : "secondary"
+                    }
                     className="gap-1.5"
                   >
                     <span
@@ -171,18 +191,24 @@ export default function CustomerDetailPage(): ReactElement {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Email
+                </label>
                 <p>{customer.email || "—"}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Phone
+                </label>
                 <p>{customer.phone || "—"}</p>
               </div>
             </div>
 
             {customer.notes && (
               <div className="mt-4 pt-4 border-t">
-                <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Notes
+                </label>
                 <p className="text-muted-foreground mt-1">{customer.notes}</p>
               </div>
             )}
@@ -192,9 +218,11 @@ export default function CustomerDetailPage(): ReactElement {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardContent className="pt-6 flex items-center justify-between">
+            <CardContent className="flex flex-1 items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Orders
+                </p>
                 <p className="text-2xl font-bold mt-1">0</p>
               </div>
               <div className="p-3 bg-primary/10 rounded-lg">
@@ -204,9 +232,11 @@ export default function CustomerDetailPage(): ReactElement {
           </Card>
 
           <Card>
-            <CardContent className="pt-6 flex items-center justify-between">
+            <CardContent className="flex flex-1 items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Outstanding
+                </p>
                 <p className="text-2xl font-bold mt-1">$0</p>
               </div>
               <div className="p-3 bg-amber-100 rounded-lg">
@@ -216,9 +246,11 @@ export default function CustomerDetailPage(): ReactElement {
           </Card>
 
           <Card>
-            <CardContent className="pt-6 flex items-center justify-between">
+            <CardContent className="flex flex-1 items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Revenue
+                </p>
                 <p className="text-2xl font-bold mt-1">$0</p>
               </div>
               <div className="p-3 bg-primary/10 rounded-lg">

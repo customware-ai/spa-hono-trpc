@@ -7,7 +7,13 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
 import type { ActionFunctionArgs } from "react-router";
-import { Form, useNavigate, useActionData, useRouteError, isRouteErrorResponse } from "react-router";
+import {
+  Form,
+  useNavigate,
+  useActionData,
+  useRouteError,
+  isRouteErrorResponse,
+} from "react-router";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
@@ -24,19 +30,22 @@ import { redirect } from "react-router";
 /**
  * Action function - handles form submission
  */
-export async function action({ request }: ActionFunctionArgs): Promise<Response | {
-  error: string;
-  fieldErrors: Record<string, string[]>;
-}> {
+export async function action({ request }: ActionFunctionArgs): Promise<
+  | Response
+  | {
+      error: string;
+      fieldErrors: Record<string, string[]>;
+    }
+> {
   const formData = await request.formData();
 
   // Extract form data
   const data = {
     company_name: formData.get("company_name") as string,
-    email: formData.get("email") as string || null,
-    phone: formData.get("phone") as string || null,
+    email: (formData.get("email") as string) || null,
+    phone: (formData.get("phone") as string) || null,
     status: (formData.get("status") as string) || "active",
-    notes: formData.get("notes") as string || null,
+    notes: (formData.get("notes") as string) || null,
   };
 
   // Validate with Zod schema
@@ -117,7 +126,7 @@ export default function NewCustomerPage(): ReactElement {
 
       <Card>
         <Form method="post" onSubmit={() => setIsSubmitting(true)}>
-          <CardContent className="pt-6 space-y-6">
+          <CardContent className="p-6 pt-0 space-y-6">
             {/* Company Name */}
             <div className="space-y-2">
               <Label htmlFor="company_name">
@@ -171,10 +180,10 @@ export default function NewCustomerPage(): ReactElement {
                 value="active"
                 placeholder="Select status"
                 onChange={(_val) => {
-                    // Note: In a real Form submission with native select it would work,
-                    // but shadcn Select needs a hidden input to work with native Form if not using controlled state.
-                    // Or we can just use the primitive Select if we want to stay closer to native.
-                    // For now I'll add a hidden input.
+                  // Note: In a real Form submission with native select it would work,
+                  // but shadcn Select needs a hidden input to work with native Form if not using controlled state.
+                  // Or we can just use the primitive Select if we want to stay closer to native.
+                  // For now I'll add a hidden input.
                 }}
               />
               <input type="hidden" name="status" value="active" />
@@ -192,7 +201,7 @@ export default function NewCustomerPage(): ReactElement {
             </div>
           </CardContent>
 
-          <CardFooter className="flex items-center justify-end gap-3 pt-6 border-t">
+          <CardFooter className="flex items-center mt-2 justify-end gap-3 pt-6 border-t">
             <Button
               type="button"
               variant="outline"
