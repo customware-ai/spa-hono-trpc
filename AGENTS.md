@@ -10,27 +10,31 @@ This file provides guidance to LLMs when working with code in this repository.
 
 Jump to section:
 
-| Section                                                       | Description                                                  |
-| ------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Core Principles](#-core-principles)                          | Type safety, architecture, error handling, testing, UX       |
-| [Commands](#commands)                                         | npm scripts for dev, build, test, lint                       |
-| [Architecture](#architecture)                                 | Layered architecture, data flow, type safety                 |
-| [Development Requirements](#development-requirements)         | Non-negotiable rules, code style, patterns                   |
-| [Directory Structure](#directory-structure)                   | File organization and structure principles                   |
-| [Design System](#design-system)                               | Colors, typography, component patterns                       |
-| [UX Requirements](#-user-experience-ux-requirements)          | Loading states, error handling, responsive design, animation |
-| [React Component Patterns](#react-component-patterns)         | Component structure, route patterns                          |
-| [Testing Patterns](#testing-patterns)                         | Component and service testing                                |
-| [React Router v7 Reference](#react-router-v7-reference-guide) | Data loading, pending UI, optimistic UI, actions             |
-| [Autonomous Task Workflow](#autonomous-task-workflow)         | Context management, task completion                          |
+| Section                                               | Description                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| [Core Principles](#-core-principles)                  | Type safety, architecture, error handling, testing, UX       |
+| [Commands](#commands)                                 | npm scripts for dev, build, test, lint                       |
+| [Architecture](#architecture)                         | Layered architecture, data flow, type safety                 |
+| [Development Requirements](#development-requirements) | Non-negotiable rules, code style, patterns                   |
+| [Directory Structure](#directory-structure)           | File organization and structure principles                   |
+| [Design System](#design-system)                       | Colors, typography, component patterns                       |
+| [UX Requirements](#-user-experience-ux-requirements)  | Loading states, error handling, responsive design, animation |
+| [React Component Patterns](#react-component-patterns) | Component structure, route patterns                          |
+| [Testing Patterns](#testing-patterns)                 | Component and service testing                                |
+| [React Router v7 Reference](#react-router-v7-guide)   | SPA routing, pending UI, optimistic UI, tRPC patterns        |
+| [Autonomous Task Workflow](#autonomous-task-workflow) | Context management, task completion                          |
 
 ### Key Import Paths
 
 ```typescript
-import { Button } from "~/components/ui/button";
-import { getCustomers } from "~/services/erp";
-import { CustomerSchema } from "~/schemas/sales";
-import { getDatabase } from "~/db";
+// App-side imports
+import { Button } from "~/components/ui/Button";
+import { trpc } from "~/lib/trpc";
+import { PageLayout } from "~/components/layout/PageLayout";
+
+// Server-side imports
+import { getDatabase } from "../db.js";
+import { CustomerSchema } from "../schemas/sales.js";
 ```
 
 ---
@@ -48,12 +52,14 @@ This codebase follows strict architectural patterns and coding standards:
 
 ### 2. **Clean Architecture**
 
-- **db.ts** - Database & filesystem operations ONLY (single source of truth)
-- **services/** - Business logic & CRUD operations (uses Result pattern)
-- **schemas/** - Zod validation schemas (source of truth for types)
-- **routes/** - Page components with loaders/actions (no business logic)
-- **components/** - UI components only (no data fetching or business logic)
-- **utils/** - Pure utility functions
+- **server/db.ts** - Database & filesystem operations ONLY (single source of truth)
+- **server/services/** - Business logic & CRUD operations (uses Result pattern)
+- **server/schemas/** - Zod validation schemas (source of truth for shared data types)
+- **server/trpc/router.ts** - API contract and procedure handlers
+- **app/routes/** - Page components and route-level UI composition
+- **app/lib/trpc.ts** - Type-safe API client binding to server router types
+- **app/components/** - UI components only (rendering + local interaction patterns)
+- **server/utils/** / **app/lib/utils.ts** - Pure utility functions by runtime boundary
 
 ### 3. **Error Handling**
 
@@ -70,7 +76,7 @@ This codebase follows strict architectural patterns and coding standards:
 **Mandatory Test Coverage:**
 
 - **Frontend changes** (routes, components, hooks, UI behavior) → MUST have component tests
-- **Backend changes** (services, schemas, db operations, loaders/actions) → MUST have unit/integration tests
+- **Backend changes** (server services, schemas, db operations, tRPC procedures) → MUST have unit/integration tests
 - **Bug fixes** → MUST have a test that reproduces the bug and verifies the fix
 - **New features** → MUST have tests covering happy paths AND error cases
 
@@ -87,7 +93,7 @@ This codebase follows strict architectural patterns and coding standards:
 | -------------------- | ---------------------------------------------------------------------------- |
 | New component        | Rendering, variants, props, interactions, accessibility                      |
 | New service function | Happy path, error cases, edge cases, validation                              |
-| Route loader/action  | Data loading, error handling, form submission                                |
+| Route + API flow     | Query/mutation loading, pending states, error handling, submission behavior  |
 | Bug fix              | Test that reproduces the bug + verifies the fix                              |
 | Refactor             | Ensure existing tests still pass (no new tests needed if behavior unchanged) |
 
@@ -121,17 +127,20 @@ npm run check                      # Full validation (includes tests)
 - **Responsive Design**: All UI must work on mobile, tablet, and desktop
 - **Motion**: Use purposeful animation for feedback and guidance
 
-> **CRITICAL**: See [UX Requirements](#-user-experience-ux-requirements) for detailed patterns and [React Router v7 Reference Guide](#react-router-v7-reference-guide) for implementation details.
+> **CRITICAL**: See [UX Requirements](#-user-experience-ux-requirements) for detailed patterns and [React Router v7 Reference Guide](#react-router-v7-guide) for implementation details.
 
 ## Commands
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Production build
-npm run typecheck    # TypeScript checking + React Router typegen
-npm run lint         # Type-aware linting with oxlint
-npm test             # Run all tests with Vitest
-npm run check        # Run typecheck + lint + build + test (full validation)
+npm run build         # Build client + compile server TypeScript
+npm run build:client  # Build React Router client output
+npm run build:server  # Compile server TypeScript only
+npm run start         # Run production Hono server
+npm run migrate       # Run server database migrations
+npm run typecheck     # TypeScript checking + React Router typegen
+npm run lint          # Type-aware linting with oxlint
+npm test              # Run all tests with Vitest
+npm run check         # Run typecheck + lint + build + test (full validation)
 ```
 
 To run a single test file:
@@ -140,106 +149,116 @@ To run a single test file:
 npx vitest run tests/db/db.test.ts
 ```
 
+### Dependency Baseline
+
+**Framework/runtime dependencies (current):**
+
+- `react-router@7.13.0` + `@react-router/dev@7.13.0` + `@react-router/node@^7.13.0`
+- `vite@8.0.0-beta.13` (with override pinned), `@vitejs/plugin-react@5.1.4`
+- `hono@^4.12.1`, `@hono/node-server@^1.19.9`, `@hono/trpc-server@^0.4.2`
+- `@trpc/server@^11.10.0`, `@trpc/client@^11.10.0`, `@trpc/react-query@^11.10.0`
+- `@tanstack/react-query@^5.90.21`
+- `sql.js@1.14.0`
+- `zod@^4.3.6`, `neverthrow@8.2.0`
+
+**Testing/lint/tooling dependencies (current):**
+
+- `vitest@4.0.18`, `@testing-library/react@16.3.0`, `@testing-library/user-event@14.6.1`
+- `oxlint@1.47.0`, `oxlint-tsgolint@latest`
+- `typescript@5.9.3`, `tsx@4.21.0`, `concurrently@^9.2.1`
+
 ## Architecture
 
-This is a full-stack React Router v7 application with SQLite (sql.js) persistence.
+This is a React Router v7 SPA with a dedicated Hono+tRPC backend and SQLite (sql.js) persistence.
 
 ### Architectural Flow
 
-The application follows a strict layered architecture with clear data flow:
+The application follows a strict client/server layered architecture:
 
 ```
-User Request
+User Interaction
     ↓
-Route (loader/action)
+React Router Route Component (app/routes/*.tsx)
     ↓
-Service Layer (erp.ts)
+tRPC React Query Client (app/lib/trpc.ts)
     ↓
-Schema Validation (Zod)
+Hono tRPC Endpoint (/trpc/* in server/index.ts)
     ↓
-Database Layer (db.ts)
+tRPC Router Procedures (server/trpc/router.ts)
     ↓
-SQLite (sql.js)
+Service Layer (server/services/erp.ts)
+    ↓
+Schema Validation (server/schemas/*.ts)
+    ↓
+Database Layer (server/db.ts)
+    ↓
+SQLite (sql.js, persisted to ../sqlite/database.db)
 ```
 
 **Key Rules:**
 
-1. **Routes** call **services**, never database directly
-2. **Services** validate with **schemas**, then call **database**
-3. **Database (db.ts)** is the ONLY file that touches filesystem
-4. **Components** receive data via props, never fetch directly
-5. All data flows through the Result pattern for type-safe error handling
+1. **App routes/components** call **tRPC hooks**, never import server db/services directly
+2. **tRPC router procedures** call **server services**, not the database directly
+3. **Server services** validate with **server schemas**, then call **server db**
+4. **`server/db.ts`** is the ONLY file that touches filesystem/sql.js internals
+5. All server-side mutable operations use `Result<T, E>` and structured error objects
 
 ### Type Safety Flow
 
-Every layer maintains strict type safety:
+Every layer maintains strict end-to-end type safety:
 
 ```typescript
-// 1. Define Schema (schemas/sales.ts)
-export const CustomerSchema = z.object({
-  id: z.number().optional(),
+// 1. Define schema on the server (server/schemas/sales.ts)
+export const CreateCustomerSchema = z.object({
   company_name: z.string().min(1).max(200),
   email: z.string().email().optional(),
 });
 
-// 2. Derive TypeScript Type
-export type Customer = z.infer<typeof CustomerSchema>;
+// 2. Derive server types
+export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 
-// 3. Service validates and uses typed Result (services/erp.ts)
+// 3. Validate and execute in service layer
 export async function createCustomer(
   data: unknown,
-): Promise<Result<Customer, Error>> {
-  // Validate input
-  const validation = CustomerSchema.safeParse(data);
+): Promise<Result<Customer, DatabaseError>> {
+  const validation = CreateCustomerSchema.safeParse(data);
   if (!validation.success) {
-    return err(new Error("Validation failed"));
+    return err({
+      type: "VALIDATION_ERROR",
+      message: "Invalid customer data",
+      details: validation.error.errors,
+    });
   }
 
-  // Database operation
-  const result = await insertCustomer(validation.data);
-  if (result.isErr()) {
-    return err(result.error);
-  }
-
-  return ok(result.value);
+  return insertCustomer(validation.data);
 }
 
-// 4. Route loader uses typed result (routes/index.tsx)
-export async function loader(): Promise<{
-  customers: Customer[];
-  error: string | null;
-}> {
-  const result = await getCustomers();
+// 4. Expose through tRPC router (server/trpc/router.ts)
+export const appRouter = router({
+  createCustomer: procedure
+    .input(CreateCustomerSchema)
+    .mutation(async ({ input }) => createCustomer(input)),
+});
 
-  if (result.isErr()) {
-    return { customers: [], error: result.error.message };
-  }
-
-  return { customers: result.value, error: null };
-}
-
-// 5. Component receives typed data
-export default function CustomersPage(): ReactElement {
-  const { customers, error } = useLoaderData<typeof loader>();
-  // customers is Customer[], fully typed
-}
+// 5. Consume with typed hooks in app routes (app/routes/*.tsx)
+const createCustomerMutation = trpc.createCustomer.useMutation();
 ```
 
 ### Database Layer Rules
 
-**CRITICAL**: `db.ts` is the ONLY file that:
+**CRITICAL**: `server/db.ts` is the ONLY file that:
 
 - Imports sql.js
 - Reads/writes `../sqlite/database.db` file (outside project directory)
-- Manages database connection
-- Calls `saveDatabase()` after mutations
+- Manages database connection lifecycle
+- Calls `saveDatabase()` after all mutations
 
 **NEVER:**
 
-- Import better-sqlite3 (we use sql.js)
-- Access filesystem outside of db.ts
-- Bypass the database layer
-- Skip calling saveDatabase() after mutations
+- Import better-sqlite3 (this project uses sql.js)
+- Access filesystem/database files outside `server/db.ts`
+- Bypass service + schema layers from API handlers
+- Skip calling `saveDatabase()` after create/update/delete operations
 
 ## Development Requirements
 
@@ -263,10 +282,11 @@ export default function CustomersPage(): ReactElement {
    - Fix any errors before moving to next task
 
 4. **Single Source of Truth**
-   - Database operations ONLY in `db.ts`
-   - Business logic ONLY in `services/`
-   - Validation schemas ONLY in `schemas/`
-   - UI components ONLY in `components/`
+   - Database operations ONLY in `server/db.ts`
+   - Business logic ONLY in `server/services/`
+   - Validation schemas ONLY in `server/schemas/`
+   - API procedure contracts ONLY in `server/trpc/router.ts`
+   - UI route/component logic ONLY in `app/routes/` and `app/components/`
    - Never bypass these layers
 
 5. **Error Handling Pattern**
@@ -285,7 +305,7 @@ export default function CustomersPage(): ReactElement {
 
 #### Error Handling with neverthrow
 
-All database operations in `app/db.ts` return `Result<T, E>` types from neverthrow. Check results with `.isErr()` / `.isOk()` before accessing values. Error types are defined in `app/types/errors.ts`.
+Database and service operations in `server/` return `Result<T, E>` types from neverthrow. Check results with `.isErr()` / `.isOk()` before accessing values. Error types are defined in `server/types/errors.ts`.
 
 ```typescript
 import { Result, ok, err } from "neverthrow";
@@ -307,12 +327,12 @@ export async function getRecords(): Promise<
   }
 }
 
-// Usage in loaders
+// Usage in tRPC procedure handlers
 const result = await getRecords();
 if (result.isErr()) {
-  return { data: [], error: result.error.message };
+  throw new Error(result.error.message);
 }
-return { data: result.value };
+return result.value;
 ```
 
 #### Schema Validation with Zod
@@ -367,7 +387,7 @@ export async function createUser(data: unknown): Promise<Result<User, Error>> {
 
 **Critical Rules:**
 
-1. **db.ts** is the ONLY file that imports sql.js and touches the filesystem
+1. **server/db.ts** is the ONLY file that imports sql.js and touches the filesystem
 2. Every mutation MUST call `saveDatabase()` to persist changes
 3. Use the migration system for all schema changes
 4. Never modify the database schema directly in production
@@ -375,7 +395,7 @@ export async function createUser(data: unknown): Promise<Result<User, Error>> {
 **Migration System:**
 
 ```typescript
-// app/db-migrations/001-initial-schema.ts
+// server/db-migrations/001-initial-schema.ts
 export const migration_001 = {
   id: 1,
   name: "initial-schema",
@@ -395,7 +415,7 @@ export const migration_001 = {
 
 When creating a new migration:
 
-1. **Create** the migration file in `app/db-migrations/` with sequential numbering
+1. **Create** the migration file in `server/db-migrations/` with sequential numbering
 2. **Run** the migration: `npm run migrate`
 3. **Verify** it ran successfully (check for errors in output)
 4. **Test** that it works:
@@ -450,7 +470,7 @@ export async function insertUser(
 // ❌ WRONG - last_insert_rowid() returns 0 with sql.js prepared statements
 const result = db.exec(`SELECT * FROM users WHERE id = last_insert_rowid()`);
 
-// ❌ WRONG - Never import sql.js outside db.ts
+// ❌ WRONG - Never import sql.js outside server/db.ts
 import initSqlJs from "sql.js"; // NEVER DO THIS
 ```
 
@@ -459,28 +479,46 @@ import initSqlJs from "sql.js"; // NEVER DO THIS
 ```
 app/
 ├── components/
-│   ├── layout/          # TopBar, PageLayout, PageHeader
-│   ├── ui/              # Shadcn UI components (Button, Card, Input, etc.)
-│   └── [feature]/       # Feature-specific components
+│   ├── layout/          # Page layout primitives (PageLayout, PageHeader)
+│   └── ui/              # Reusable UI components used by active routes
+├── hooks/
+│   └── use-mobile.tsx   # Shared client hook
+├── lib/
+│   ├── trpc.ts          # Typed tRPC React client
+│   ├── trpc-provider.tsx # QueryClient + tRPC provider composition
+│   └── utils.ts         # Client utility helpers
 ├── routes/
-│   ├── home.tsx         # Main customers list route (dashboard)
+│   ├── index.tsx        # Customers list route
 │   ├── customers.new.tsx # Create customer route
 │   ├── customers.$id.tsx # Customer detail route
-│   └── [feature]/       # Feature module routes (nested)
-├── services/
-│   └── [service].ts     # Business logic & CRUD operations
-├── schemas/
-│   └── [entity].ts      # Entity validation schemas (Zod)
-├── db-migrations/
-│   ├── migrate.ts       # Migration system
-│   └── 00X-*.ts         # Numbered database migrations
 ├── utils/
-│   └── [utility].ts     # Pure utility functions
-├── db.ts                # Database layer (ONLY file for filesystem)
-├── types/               # TypeScript type definitions
+│   └── logger.ts        # Client logging utility
+├── routes.ts            # React Router route map
 └── root.tsx             # Root layout component
 
-tests/                   # Test files mirror app/ structure
+server/
+├── db.ts                # Database layer (ONLY file for filesystem/sql.js)
+├── index.ts             # Hono app: CORS, /trpc/*, assets, SPA fallback
+├── start.ts             # Node server startup entrypoint
+├── db-migrations/
+│   ├── migrate.ts       # Migration engine
+│   ├── run-migrations.ts # Migration runner script
+│   └── 001-erp-schema.ts # Schema migration
+├── trpc/
+│   ├── index.ts         # tRPC init/context
+│   └── router.ts        # tRPC procedures and API contract
+├── services/
+│   └── erp.ts           # Business logic
+├── schemas/
+│   ├── index.ts         # Shared schema exports
+│   └── sales.ts         # Sales/customer schemas
+├── types/
+│   └── errors.ts        # Typed error contracts
+└── utils/
+    ├── calculations.ts  # Domain calculations
+    └── validate.ts      # Shared validation helper
+
+tests/                   # Test files mirror active app/server boundaries
 ├── components/          # UI component tests
 ├── db/                  # Database operation tests
 └── services/            # Business logic tests
@@ -488,11 +526,11 @@ tests/                   # Test files mirror app/ structure
 
 **Structure Principles:**
 
-- Group by feature/domain (feature folders)
-- Separate concerns by layer (db → services → schemas → routes → components)
-- One file per entity/service/component
-- Tests mirror the source structure
-- Clear naming conventions
+- Separate client and server responsibilities (`app/` vs `server/`)
+- Keep API boundary explicit through `server/trpc/router.ts` and `app/lib/trpc.ts`
+- Keep persistence and migrations exclusively in `server/`
+- Keep route files focused on UI composition + tRPC hook orchestration
+- Tests mirror behavior-critical boundaries (UI, service, db)
 
 ### Design System
 
@@ -529,31 +567,36 @@ tests/                   # Test files mirror app/ structure
 
 **CRITICAL**: This section defines mandatory UX patterns for all user-facing code. Every route, form, and interactive element MUST implement these patterns. Poor UX is a bug - treat it with the same severity as broken functionality.
 
-> **Important**: All UX patterns in this section integrate with React Router v7. See the [React Router v7 Reference Guide](#react-router-v7-reference-guide) section for implementation details on `useNavigation`, `useFetcher`, optimistic UI, and pending states.
+> **Important**: All UX patterns in this section integrate with React Router v7 + tRPC React Query. See the [React Router v7 Reference Guide](#react-router-v7-guide) section for implementation details on `useNavigation`, query/mutation pending states, and optimistic UI.
 
 ---
 
 ### Loading States (MANDATORY)
 
-**Every data fetch and action MUST have a loading state.** Users should never see blank screens.
+**Every query and mutation MUST have a loading state.** Users should never see blank screens.
 
 #### Skeleton Components
 
-Import from `~/components/ui/LoadingSkeleton`:
+Use the existing `Skeleton` component from `~/components/ui/Skeleton`:
 
-| Component       | Use Case              | Key Props                          |
-| --------------- | --------------------- | ---------------------------------- |
-| `PageSkeleton`  | Full page loading     | `contentType="table\|cards\|form"` |
-| `TableSkeleton` | Table loading         | `rows`, `columns`                  |
-| `CardSkeleton`  | Card grid loading     | `count`                            |
-| `FormSkeleton`  | Form loading          | `fields`, `showSubmitButton`       |
-| `Spinner`       | Inline/button loading | `size` (xs/sm/md/lg)               |
+| Component  | Use Case                      | Key Props             |
+| ---------- | ----------------------------- | --------------------- |
+| `Skeleton` | Page/section/row placeholders | `className` sizing    |
+| `Button`   | Built-in loading state        | `loading`, `disabled` |
 
-**HydrateFallback Pattern (REQUIRED with clientLoader):**
+**HydrateFallback Pattern (required for SPA hydration):**
 
 ```typescript
 export function HydrateFallback(): ReactElement {
-  return <PageLayout><PageSkeleton contentType="table" itemCount={10} /></PageLayout>;
+  return (
+    <PageLayout>
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    </PageLayout>
+  );
 }
 ```
 
@@ -563,9 +606,9 @@ export function HydrateFallback(): ReactElement {
 // Preferred: Button with built-in loading
 <Button loading={isSubmitting}>{isSubmitting ? "Saving..." : "Save"}</Button>
 
-// With fetcher
-const fetcher = useFetcher();
-const isSubmitting = fetcher.state !== "idle";
+// With tRPC mutation
+const createCustomer = trpc.createCustomer.useMutation();
+const isSubmitting = createCustomer.isPending;
 <Button type="submit" loading={isSubmitting}>{isSubmitting ? "Creating..." : "Create"}</Button>
 ```
 
@@ -573,23 +616,23 @@ const isSubmitting = fetcher.state !== "idle";
 
 **All mutations MUST implement optimistic UI.** Predict the outcome and update UI immediately while the request processes.
 
-> **Full Implementation**: See [React Router v7 Reference Guide > Optimistic UI Patterns](#optimistic-ui-patterns-required) for complete examples.
+> **Full Implementation**: See [React Router v7 Reference Guide > Optimistic UI Patterns](#optimistic-ui-patterns) for complete examples.
 
-**Core Pattern:** Use `fetcher.formData` to read pending values and render the predicted state:
+**Core Pattern:** Use pending mutation variables or React Query cache updates to render predicted state:
 
 ```typescript
-const fetcher = useFetcher();
+const updateTask = trpc.updateTask.useMutation();
 
-// Optimistically determine state from pending form data
+// Optimistically determine state from pending mutation variables
 let isComplete = task.status === "complete";
-if (fetcher.formData) {
-  isComplete = fetcher.formData.get("status") === "complete";
+if (updateTask.isPending && updateTask.variables?.id === task.id) {
+  isComplete = updateTask.variables.status === "complete";
 }
 
 // Optimistic delete - filter out items being deleted
 const visibleItems = items.filter((item) => {
-  if (fetcher.formData?.get("intent") === "delete") {
-    return item.id !== Number(fetcher.formData.get("itemId"));
+  if (deleteTask.isPending && deleteTask.variables?.id === item.id) {
+    return false;
   }
   return true;
 });
@@ -719,7 +762,7 @@ if (result.isErr()) {
 
 **Animation must be purposeful** - provide feedback, guide attention, create continuity. Never decorative.
 
-> Use `viewTransition` for page transitions. See [React Router v7 Reference Guide](#react-router-v7-reference-guide).
+> Use `viewTransition` for page transitions. See [React Router v7 Reference Guide](#react-router-v7-guide).
 
 #### Key Patterns
 
@@ -785,15 +828,15 @@ export function Button({
 
 **Route Module Structure:**
 
-> **Full Implementation**: See [React Router v7 Reference Guide](#react-router-v7-reference-guide) for comprehensive patterns.
+> **Full Implementation**: See [React Router v7 Reference Guide](#react-router-v7-guide) for comprehensive patterns.
 
 Every route module should export:
 
-1. `loader` - Fetch data (REQUIRED for data routes)
-2. `action` - Handle mutations (REQUIRED for forms)
-3. `ErrorBoundary` - Handle errors (REQUIRED)
-4. `HydrateFallback` - Loading state (REQUIRED if using clientLoader)
-5. `default` component - Render with typed data
+1. `default` component - Render route UI (REQUIRED)
+2. Optional `ErrorBoundary` - Handle route-level render/runtime errors
+3. Optional route metadata exports as needed (`meta`, `links`)
+4. Use `trpc.*.useQuery()` for reads and `trpc.*.useMutation()` for writes
+5. Use local pending/error UI based on query/mutation state
 
 **Key React Patterns:**
 
@@ -858,11 +901,11 @@ describe("User Service", () => {
 });
 ```
 
-**Organization:** Tests in `tests/` mirroring `app/` structure. Test happy paths AND error cases.
+**Organization:** Tests in `tests/` mirroring active boundaries (`app/components`, `server/db`, `server/services`). Test happy paths AND error cases.
 
 ### Path Alias
 
-Use `~/` to import from `app/` directory (e.g., `import { Button } from '~/components/ui/button'`).
+Use `~/` to import from `app/` directory (e.g., `import { Button } from '~/components/ui/Button'`).
 
 ## Autonomous Task Workflow
 
@@ -899,664 +942,162 @@ Use `--status failed` if the task cannot be completed, with a summary explaining
 
 ## React Router v7 Guide
 
-> **CRITICAL**: This section is the authoritative reference for all data loading and UI patterns in this codebase. All routes MUST implement the patterns described here. The [UX Requirements](#-user-experience-ux-requirements) section references these patterns - when implementing UX features, always refer back to this guide.
+> **CRITICAL**: This section is the authoritative reference for routing/data UI patterns in this codebase. This project runs React Router in SPA mode and uses tRPC for all backend data access.
 
 ### Overview
 
-React Router v7 is essentially "Remix v3" - it brings Remix's framework features into React Router. The distinction between the two has become minimal. This framework provides powerful primitives for:
+This app uses:
 
-- **Data Loading**: Fetch data before rendering with `loader` and `clientLoader`
-- **Mutations**: Handle form submissions with `action` functions
-- **Pending UI**: Show loading states during navigation and submissions
-- **Optimistic UI**: Update the UI immediately based on pending form data
-- **Error Handling**: Route-level error boundaries for graceful error handling
+- **React Router v7** for client routing and route module boundaries
+- **SPA mode** (`ssr: false`) with build-time generated `index.html`
+- **Hono server** for static asset serving + `/trpc/*` API endpoint + SPA fallback
+- **tRPC + React Query** for typed queries/mutations
 
----
+**What this means:**
 
-### Recommended Loading Strategy ⭐
-
-**Use `loader` for initial page load (SSR), use `clientLoader` for fast subsequent navigations.**
-
-| Scenario               | Use                       | Why                                       |
-| ---------------------- | ------------------------- | ----------------------------------------- |
-| Initial page load      | `loader`                  | SSR for SEO, fast first paint             |
-| Subsequent navigations | `clientLoader`            | Runs on client = instant navigation       |
-| Hybrid (best of both)  | `loader` + `clientLoader` | SSR initial load, fast client navigations |
-
-**Pattern for fast navigations:**
-
-```typescript
-// Server loader for initial SSR
-export async function loader(): Promise<{ data: Data[] }> {
-  const result = await getData();
-  return { data: result.isOk() ? result.value : [] };
-}
-
-// Client loader for fast subsequent navigations
-export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs): Promise<{ data: Data[] }> {
-  // On initial hydration, use server data
-  // On client navigation, fetch directly (faster than round-trip to server)
-  return serverLoader();
-}
-
-// Enable client loader on hydration for consistent behavior
-clientLoader.hydrate = true as const;
-
-export function HydrateFallback(): ReactElement {
-  return <PageSkeleton contentType="table" />;
-}
-```
-
-This gives you:
-
-- ✅ SEO-friendly initial page load (SSR)
-- ✅ Fast subsequent navigations (client-side fetch)
-- ✅ Consistent loading states via `HydrateFallback`
+- Do not build new route features around `loader`/`action`
+- Route components should orchestrate UI + `trpc.*.useQuery()`/`useMutation()`
+- Server logic belongs in `server/trpc/router.ts` → `server/services/` → `server/db.ts`
 
 ---
 
-### Data Loading (MANDATORY)
+### Route Module Strategy
 
-**Every route that displays data MUST use loaders.** Never fetch data inside components with `useEffect` - this is an anti-pattern in React Router v7.
+Use simple route modules focused on rendering and hook orchestration.
 
-#### Server Data Loading with `loader`
+**Required in every route module:**
 
-The `loader` function runs on the server for initial page loads and on the client for navigations (via automatic fetch). Server-only code is automatically stripped from client bundles.
+1. Default route component with explicit `ReactElement` return type
+2. Loading UI from query/mutation state
+3. Error UI from query/mutation state
+4. Pending state on submit buttons
 
-```typescript
-// routes/customers.$id.tsx
-import type { Route } from "./+types/customers.$id";
-import { getCustomerById } from "~/services/erp";
+**Optional exports:**
 
-/**
- * Server loader - runs on server for SSR and via fetch for client navigation.
- * This code is stripped from client bundles - safe to use server-only APIs.
- */
-export async function loader({ params }: Route.LoaderArgs): Promise<{
-  customer: Customer;
-}> {
-  const result = await getCustomerById(params.id);
-
-  if (result.isErr()) {
-    // Return error in data, not thrown - allows graceful handling
-    throw new Response("Not Found", { status: 404 });
-  }
-
-  return { customer: result.value };
-}
-
-export default function CustomerPage({
-  loaderData,
-}: Route.ComponentProps): ReactElement {
-  const { customer } = loaderData;
-
-  return (
-    <PageLayout>
-      <h1>{customer.company_name}</h1>
-      <p>{customer.email}</p>
-    </PageLayout>
-  );
-}
-```
-
-#### Client Data Loading with `clientLoader`
-
-Use `clientLoader` for browser-only data fetching patterns. **MUST include `HydrateFallback` to show loading state.**
-
-```typescript
-// routes/index.tsx
-import type { Route } from "./+types/_index";
-
-/**
- * Client loader - runs only in the browser.
- * Use for: browser APIs, localStorage, client-side caches.
- */
-export async function clientLoader({
-  params,
-}: Route.ClientLoaderArgs): Promise<{ customers: Customer[] }> {
-  const res = await fetch(`/api/customers`);
-  const customers = await res.json();
-  return { customers };
-}
-
-/**
- * HydrateFallback - REQUIRED when using clientLoader.
- * Rendered while clientLoader is running. MUST show meaningful loading state.
- * See: UX Requirements > Loading States for skeleton patterns.
- */
-export function HydrateFallback(): ReactElement {
-  return (
-    <PageLayout>
-      <div className="space-y-4">
-        <LoadingSkeleton variant="rectangular" className="h-8 w-48" />
-        <TableSkeleton rows={10} columns={4} />
-      </div>
-    </PageLayout>
-  );
-}
-
-export default function Home({
-  loaderData,
-}: Route.ComponentProps): ReactElement {
-  const { customers } = loaderData;
-  return <CustomerList data={customers} />;
-}
-```
-
-#### Hybrid Loading (Server + Client)
-
-Combine both loaders for optimal SSR with client-side enhancements.
-
-```typescript
-// routes/index.tsx
-import type { Route } from "./+types/_index";
-
-// Server loader for SSR
-export async function loader(): Promise<{ customers: Customer[] }> {
-  const result = await getCustomers();
-  return { customers: result.isOk() ? result.value : [] };
-}
-
-// Client loader augments server data
-export async function clientLoader({
-  serverLoader,
-}: Route.ClientLoaderArgs): Promise<{
-  customers: Customer[];
-  userFavorites: number[];
-}> {
-  const serverData = await serverLoader();
-  // Add client-only data (e.g., from localStorage)
-  const userFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-  return { ...serverData, userFavorites };
-}
-
-// Force client loader during hydration (optional)
-clientLoader.hydrate = true as const;
-
-export function HydrateFallback(): ReactElement {
-  return <TableSkeleton rows={10} />;
-}
-```
-
-#### Loader Return Type Safety
-
-**All loaders MUST have explicit return types.** The `loaderData` prop type is automatically inferred.
-
-```typescript
-// ✅ CORRECT - Explicit return type
-export async function loader({ params }: Route.LoaderArgs): Promise<{
-  customer: Customer | null;
-  error: string | null;
-}> {
-  // Implementation
-}
-
-// ❌ WRONG - Implicit return type
-export async function loader({ params }: Route.LoaderArgs) {
-  // No return type - violates type safety requirements
-}
-```
+- `ErrorBoundary` for unexpected render/runtime route errors
+- `meta`/`links` when route-specific metadata is needed
 
 ---
 
-### Pending UI Patterns (MANDATORY)
+### Data Fetching (Queries)
 
-**Every navigation and form submission MUST show appropriate pending UI.** Users should never wonder if their action was registered or if the page is loading.
-
-#### Global Navigation Pending State
-
-Show a global loading indicator when navigating between routes.
+All read operations should use `trpc.*.useQuery()`.
 
 ```typescript
-// root.tsx or layout component
-import { useNavigation, Outlet } from "react-router";
-
-export default function RootLayout(): ReactElement {
-  const navigation = useNavigation();
-
-  // Check if any navigation is in progress
-  const isNavigating = Boolean(navigation.location);
-
-  return (
-    <html>
-      <body>
-        {/* Global loading bar at top of page */}
-        {isNavigating && (
-          <div className="fixed top-0 left-0 right-0 z-50">
-            <div className="h-1 bg-primary-500 animate-pulse" />
-          </div>
-        )}
-
-        {/* Or a spinner overlay */}
-        {isNavigating && (
-          <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-40">
-            <Spinner size="lg" />
-          </div>
-        )}
-
-        <Outlet />
-      </body>
-    </html>
-  );
-}
-```
-
-#### `useNavigation` Hook States
-
-The `useNavigation` hook provides detailed information about navigation state:
-
-```typescript
-import { useNavigation } from "react-router";
-
-function NavigationAwareComponent(): ReactElement {
-  const navigation = useNavigation();
-
-  // Navigation states:
-  // - navigation.state === "idle"       → No navigation in progress
-  // - navigation.state === "loading"    → Route loaders are running
-  // - navigation.state === "submitting" → Form action is running
-
-  // navigation.location exists when navigation is pending
-  const isNavigating = Boolean(navigation.location);
-
-  // Check for specific form submission
-  const isSubmittingToNewCustomer = navigation.formAction === "/customers/new";
-
-  // Get form data being submitted
-  const submittedData = navigation.formData;
-
-  return (
-    <div>
-      {navigation.state === "loading" && <p>Loading page...</p>}
-      {navigation.state === "submitting" && <p>Submitting form...</p>}
-    </div>
-  );
-}
-```
-
-#### Local Pending States with `NavLink`
-
-Show pending state on individual navigation links:
-
-```typescript
-import { NavLink } from "react-router";
-
-function TopBar(): ReactElement {
-  return (
-    <nav className="flex gap-4">
-      <NavLink
-        to="/"
-        viewTransition // Enable view transitions
-        className={({ isActive, isPending }) =>
-          clsx(
-            "flex items-center gap-2 px-3 py-2 rounded-md transition-colors",
-            isActive && "bg-primary-100 text-primary-700",
-            isPending && "opacity-50 pointer-events-none"
-          )
-        }
-      >
-        {({ isPending }) => (
-          <>
-            <span>Customers</span>
-            {isPending && <Spinner size="sm" />}
-          </>
-        )}
-      </NavLink>
-    </nav>
-  );
-}
-```
-
----
-
-### Form Submission with Pending UI (MANDATORY)
-
-**Every form submission MUST show loading state.** Use `useFetcher` for in-page forms (no navigation) or `Form` with `useNavigation` for navigating forms.
-
-#### Using `useFetcher` (Recommended for In-Page Forms)
-
-`useFetcher` handles form submissions without causing page navigation. Each fetcher has its own independent state.
-
-```typescript
-import { useFetcher } from "react-router";
-
-/**
- * Form that submits without navigating away.
- * Uses fetcher for independent loading state.
- */
-function CreateCustomerForm(): ReactElement {
-  const fetcher = useFetcher();
-
-  // Fetcher states:
-  // - fetcher.state === "idle"       → Not submitting
-  // - fetcher.state === "submitting" → POST/PUT/PATCH/DELETE in progress
-  // - fetcher.state === "loading"    → Revalidating after submission
-
-  const isSubmitting = fetcher.state !== "idle";
-  const isSuccess = fetcher.data?.success;
-  const error = fetcher.data?.error;
-
-  return (
-    <fetcher.Form method="post" action="/api/customers" className="space-y-4">
-      <Input
-        name="company_name"
-        label="Company Name"
-        required
-        disabled={isSubmitting}
-      />
-
-      <Input
-        name="email"
-        label="Email"
-        type="email"
-        disabled={isSubmitting}
-      />
-
-      {/* Show error from action response */}
-      {error && (
-        <ErrorDisplay error={{ message: error }} variant="inline" />
-      )}
-
-      {/* Show success message */}
-      {isSuccess && (
-        <div className="text-green-600">Customer created successfully!</div>
-      )}
-
-      {/* Button with loading state - REQUIRED */}
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Spinner size="sm" className="mr-2" />
-            Creating...
-          </>
-        ) : (
-          "Create Customer"
-        )}
-      </Button>
-    </fetcher.Form>
-  );
-}
-```
-
-#### Using `Form` with `useNavigation` (For Navigating Forms)
-
-Use when the form submission should navigate to a new page:
-
-```typescript
-import { Form, useNavigation } from "react-router";
-
-function NewCustomerForm(): ReactElement {
-  const navigation = useNavigation();
-
-  // Check if THIS specific form is being submitted
-  const isSubmitting = navigation.formAction === "/customers/new";
-
-  return (
-    <Form method="post" action="/customers/new" className="space-y-4">
-      <Input name="company_name" label="Company Name" required disabled={isSubmitting} />
-      <Textarea name="notes" label="Notes" disabled={isSubmitting} />
-
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Spinner size="sm" className="mr-2" />
-            Creating Customer...
-          </>
-        ) : (
-          "Create Customer"
-        )}
-      </Button>
-    </Form>
-  );
-}
-```
-
-#### Multiple Forms on Same Page
-
-Use `useFetcher` for independent form states:
-
-```typescript
-function CustomerList({ customers }: { customers: Customer[] }): ReactElement {
-  return (
-    <ul className="space-y-2">
-      {customers.map((customer) => (
-        <CustomerItem key={customer.id} customer={customer} />
-      ))}
-    </ul>
-  );
-}
-
-function CustomerItem({ customer }: { customer: Customer }): ReactElement {
-  // Each customer has its own fetcher - independent states
-  const deleteFetcher = useFetcher();
-  const toggleFetcher = useFetcher();
-
-  const isDeleting = deleteFetcher.state !== "idle";
-  const isToggling = toggleFetcher.state !== "idle";
-
-  return (
-    <li className={clsx("flex items-center gap-3 p-3", isDeleting && "opacity-50")}>
-      {/* Toggle status */}
-      <toggleFetcher.Form method="post" action={`/customers/${customer.id}/toggle`}>
-        <button
-          type="submit"
-          disabled={isToggling}
-          className="w-6 h-6 rounded border flex items-center justify-center"
-        >
-          {isToggling ? <Spinner size="sm" /> : customer.status === 'active' && <CheckIcon />}
-        </button>
-      </toggleFetcher.Form>
-
-      <span className={clsx(customer.status === 'inactive' && "text-gray-400")}>{customer.company_name}</span>
-
-      {/* Delete button */}
-      <deleteFetcher.Form method="post" action={`/customers/${customer.id}/delete`}>
-        <button
-          type="submit"
-          disabled={isDeleting}
-          className="text-red-500 hover:text-red-700"
-        >
-          {isDeleting ? <Spinner size="sm" /> : <TrashIcon />}
-        </button>
-      </deleteFetcher.Form>
-    </li>
-  );
-}
-```
-
----
-
-### Optimistic UI Patterns (REQUIRED)
-
-**All mutations MUST implement optimistic UI where feasible.** Optimistic UI makes the app feel instant by predicting the outcome based on form data.
-
-#### Core Concept
-
-When a form is submitted, `fetcher.formData` contains the pending form values. Use these to immediately update the UI while the request processes.
-
-```typescript
-import { useFetcher } from "react-router";
-
-function CustomerItem({ customer }: { customer: Customer }): ReactElement {
-  const fetcher = useFetcher();
-
-  // Optimistically determine status
-  let isActive = customer.status === "active";
-
-  // If form is being submitted, use the pending value instead
-  if (fetcher.formData) {
-    isActive = fetcher.formData.get("status") === "active";
-  }
-
-  return (
-    <div className={clsx(
-      "flex items-center gap-3 p-3 rounded-lg transition-all",
-      isActive && "bg-green-50"
-    )}>
-      <fetcher.Form method="post" action={`/customers/${customer.id}/toggle`}>
-        <input
-          type="hidden"
-          name="status"
-          value={isActive ? "inactive" : "active"}
-        />
-        <button
-          type="submit"
-          className={clsx(
-            "w-6 h-6 rounded-full border-2 flex items-center justify-center",
-            "transition-colors",
-            isActive
-              ? "bg-green-500 border-green-500 text-white"
-              : "border-surface-300 hover:border-green-400"
-          )}
-        >
-          {isActive && <CheckIcon className="w-4 h-4" />}
-        </button>
-      </fetcher.Form>
-
-      <span className={clsx(
-        "transition-all",
-        !isActive && "text-surface-500"
-      )}>
-        {customer.company_name}
-      </span>
-    </div>
-  );
-}
-```
-
-#### Optimistic List Updates
-
-```typescript
-function CustomerList({ customers }: { customers: Customer[] }): ReactElement {
-  const fetcher = useFetcher();
-
-  // Optimistically filter out deleted customers
-  const visibleCustomers = customers.filter((customer) => {
-    // If this customer is being deleted, hide it immediately
-    if (
-      fetcher.formData &&
-      fetcher.formData.get("intent") === "delete" &&
-      fetcher.formData.get("customerId") === String(customer.id)
-    ) {
-      return false;
-    }
-    return true;
-  });
-
-  // Optimistically add new customers
-  let pendingCustomer: Partial<Customer> | null = null;
-  if (
-    fetcher.formData &&
-    fetcher.formData.get("intent") === "create"
-  ) {
-    pendingCustomer = {
-      id: -1, // Temporary ID
-      company_name: fetcher.formData.get("company_name") as string,
-      email: fetcher.formData.get("email") as string,
-    };
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Add customer form */}
-      <fetcher.Form method="post" className="flex gap-2">
-        <input type="hidden" name="intent" value="create" />
-        <Input name="company_name" placeholder="Company Name" required />
-        <Input name="email" placeholder="Email" type="email" required />
-        <Button type="submit" disabled={fetcher.state !== "idle"}>
-          {fetcher.state !== "idle" ? <Spinner size="sm" /> : "Add"}
-        </Button>
-      </fetcher.Form>
-
-      {/* Customer list with optimistic updates */}
-      <ul className="space-y-2">
-        {/* Show pending customer at top with loading indicator */}
-        {pendingCustomer && (
-          <li className="flex items-center gap-3 p-3 bg-surface-50 animate-pulse">
-            <span>{pendingCustomer.company_name}</span>
-            <span className="text-surface-500">{pendingCustomer.email}</span>
-            <Spinner size="sm" className="ml-auto" />
-          </li>
-        )}
-
-        {visibleCustomers.map((customer) => (
-          <li key={customer.id} className="flex items-center gap-3 p-3">
-            <span>{customer.company_name}</span>
-            <span className="text-surface-500">{customer.email}</span>
-
-            <fetcher.Form method="post" className="ml-auto">
-              <input type="hidden" name="intent" value="delete" />
-              <input type="hidden" name="customerId" value={customer.id} />
-              <button
-                type="submit"
-                className="text-red-500 hover:text-red-700"
-              >
-                Delete
-              </button>
-            </fetcher.Form>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-#### Optimistic Form Field Updates
-
-```typescript
-function EditableTitle({ customer }: { customer: Customer }): ReactElement {
-  const fetcher = useFetcher();
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Optimistically show the new company name
-  const displayName = fetcher.formData
-    ? (fetcher.formData.get("company_name") as string)
-    : customer.company_name;
-
-  const isSaving = fetcher.state !== "idle";
-
-  if (isEditing) {
+import type { ReactElement } from "react";
+import { trpc } from "~/lib/trpc";
+import { PageLayout } from "~/components/layout/PageLayout";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { Alert } from "~/components/ui/Alert";
+
+export default function CustomersPage(): ReactElement {
+  const {
+    data: customers = [],
+    isLoading,
+    error,
+  } = trpc.getCustomers.useQuery();
+
+  if (isLoading) {
     return (
-      <fetcher.Form
-        method="post"
-        action={`/customers/${customer.id}/update`}
-        onSubmit={() => setIsEditing(false)}
-        className="flex gap-2"
-      >
-        <Input
-          name="company_name"
-          defaultValue={customer.company_name}
-          autoFocus
-          className="flex-1"
-        />
-        <Button type="submit" size="sm" disabled={isSaving}>
-          {isSaving ? <Spinner size="sm" /> : "Save"}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsEditing(false)}
-        >
-          Cancel
-        </Button>
-      </fetcher.Form>
+      <PageLayout breadcrumbs={[{ label: "Customers" }]}>
+        <Skeleton className="h-10 w-full" />
+      </PageLayout>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 group">
-      <h2 className={clsx("text-xl font-semibold", isSaving && "opacity-50")}>
-        {displayName}
-      </h2>
-      {isSaving && <Spinner size="sm" />}
-      <button
-        onClick={() => setIsEditing(true)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <PencilIcon className="w-4 h-4" />
-      </button>
+    <PageLayout breadcrumbs={[{ label: "Customers" }]}>
+      {error ? (
+        <Alert variant="destructive">{error.message}</Alert>
+      ) : (
+        <div>{customers.length} customer(s)</div>
+      )}
+    </PageLayout>
+  );
+}
+```
+
+**Query rules:**
+
+- Always provide a meaningful loading state (skeleton/spinner)
+- Always surface user-friendly error feedback in UI
+- Never fetch directly from route components with raw `fetch` when tRPC endpoint exists
+
+---
+
+### Mutations (Form Submission)
+
+All write operations should use `trpc.*.useMutation()`.
+
+```typescript
+import type { FormEvent, ReactElement } from "react";
+import { useNavigate } from "react-router";
+import { trpc } from "~/lib/trpc";
+import { Button } from "~/components/ui/Button";
+import { Alert } from "~/components/ui/Alert";
+
+export default function NewCustomerPage(): ReactElement {
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
+
+  const createCustomer = trpc.createCustomer.useMutation({
+    onSuccess: async () => {
+      await utils.getCustomers.invalidate();
+      void navigate("/");
+    },
+  });
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    createCustomer.mutate({
+      company_name: String(formData.get("company_name") || ""),
+      email: String(formData.get("email") || "") || undefined,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {createCustomer.error && (
+        <Alert variant="destructive">{createCustomer.error.message}</Alert>
+      )}
+
+      <Button type="submit" loading={createCustomer.isPending}>
+        {createCustomer.isPending ? "Creating..." : "Create Customer"}
+      </Button>
+    </form>
+  );
+}
+```
+
+**Mutation rules:**
+
+- Disable/mark pending controls while mutation is pending
+- Invalidate relevant queries on success
+- Keep error state visible and recoverable
+
+---
+
+### Pending UI Patterns
+
+Use pending state at three levels:
+
+1. **Query-level**: `isLoading` for page/section skeletons
+2. **Mutation-level**: `isPending` for submit buttons and inline states
+3. **Navigation-level**: `useNavigation()` for route transition indicators
+
+```typescript
+import { useNavigation } from "react-router";
+
+function LayoutShell(): ReactElement {
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== "idle";
+
+  return (
+    <div>
+      {isNavigating && <div className="h-1 w-full animate-pulse bg-primary" />}
+      {/* layout content */}
     </div>
   );
 }
@@ -1564,375 +1105,200 @@ function EditableTitle({ customer }: { customer: Customer }): ReactElement {
 
 ---
 
-### Actions (Form Handlers)
+### Optimistic UI Patterns
 
-**Every form MUST have a corresponding action handler.** Actions process form submissions and return data to the component.
+Prefer optimistic updates for UX-critical mutations.
+
+#### Option A: Local optimistic rendering
+
+Use pending form values/mutation variables to reflect expected UI immediately.
 
 ```typescript
-// routes/customers.new.tsx
-import type { Route } from "./+types/customers.new";
-import { redirect } from "react-router";
-import { createCustomer } from "~/services/customers";
-import { CustomerSchema } from "~/schemas/customer";
+const mutation = trpc.updateCustomerStatus.useMutation();
 
-/**
- * Action handler for customer creation form.
- * Validates input, calls service, and returns result.
- */
-export async function action({
-  request,
-}: Route.ActionArgs): Promise<
-  { success: true; customerId: number } | { success: false; error: string }
-> {
-  const formData = await request.formData();
+const optimisticStatus =
+  mutation.isPending && mutation.variables?.id === customer.id
+    ? mutation.variables.status
+    : customer.status;
+```
 
-  // Convert FormData to object for validation
-  const data = Object.fromEntries(formData);
+#### Option B: React Query cache updates
 
-  // Validate with Zod schema
-  const validation = CustomerSchema.safeParse(data);
-  if (!validation.success) {
-    return {
-      success: false,
-      error: validation.error.errors[0]?.message || "Validation failed",
-    };
-  }
+Use `onMutate`/`onError`/`onSettled` for robust list-level optimistic updates.
 
-  // Call service layer
-  const result = await createCustomer(validation.data);
+```typescript
+const utils = trpc.useUtils();
 
-  if (result.isErr()) {
-    return { success: false, error: result.error.message };
-  }
+const deleteCustomer = trpc.deleteCustomer.useMutation({
+  onMutate: async ({ id }) => {
+    await utils.getCustomers.cancel();
+    const previous = utils.getCustomers.getData();
 
-  // Option 1: Return success data (for fetcher forms)
-  return { success: true, customerId: result.value.id };
+    utils.getCustomers.setData(undefined, (current) =>
+      (current ?? []).filter((c) => c.id !== id),
+    );
 
-  // Option 2: Redirect (for navigating forms)
-  // return redirect(`/customers/${result.value.id}`);
-}
-
-export default function NewCustomerPage(): ReactElement {
-  const fetcher = useFetcher<typeof action>();
-
-  const isSubmitting = fetcher.state !== "idle";
-  const error = fetcher.data?.success === false ? fetcher.data.error : null;
-
-  // Redirect on success
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      // Show success toast, redirect, etc.
+    return { previous };
+  },
+  onError: (_error, _input, context) => {
+    if (context?.previous) {
+      utils.getCustomers.setData(undefined, context.previous);
     }
-  }, [fetcher.data]);
-
-  return (
-    <PageLayout>
-      <fetcher.Form method="post" className="space-y-4 max-w-md">
-        <Input name="company_name" label="Company Name" required />
-        <Input name="email" label="Email" type="email" />
-        <Input name="phone" label="Phone" type="tel" />
-
-        {error && <ErrorDisplay error={{ message: error }} variant="inline" />}
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Spinner size="sm" className="mr-2" />
-              Creating...
-            </>
-          ) : (
-            "Create Customer"
-          )}
-        </Button>
-      </fetcher.Form>
-    </PageLayout>
-  );
-}
+  },
+  onSettled: async () => {
+    await utils.getCustomers.invalidate();
+  },
+});
 ```
 
 ---
 
 ### Error Handling
 
-Use React Router's error boundary system for route-level error handling.
+Handle errors at both data and route boundaries.
+
+#### Data-level errors (preferred for recoverable failures)
+
+- Query/mutation errors should render inline/page `Alert` or `ErrorDisplay`
+- Keep the user in context with retry options
+
+#### Route-level errors (unexpected failures)
 
 ```typescript
-// routes/customers.$customerId.tsx
-import { useRouteError, isRouteErrorResponse } from "react-router";
+import type { ReactElement } from "react";
+import { isRouteErrorResponse, useRouteError } from "react-router";
 
-/**
- * Error boundary for this route.
- * Catches errors from loader, action, and component rendering.
- */
 export function ErrorBoundary(): ReactElement {
   const error = useRouteError();
 
-  // Handle HTTP error responses (4xx, 5xx)
   if (isRouteErrorResponse(error)) {
-    return (
-      <PageLayout>
-        <ErrorDisplay
-          error={{
-            type: error.status === 404 ? "NOT_FOUND" : "SERVER_ERROR",
-            message: error.statusText || "An error occurred",
-          }}
-          variant="page"
-        />
-      </PageLayout>
-    );
+    return <div>{error.status} {error.statusText}</div>;
   }
 
-  // Handle thrown errors
-  const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-  return (
-    <PageLayout>
-      <ErrorDisplay
-        error={{ type: "SERVER_ERROR", message: errorMessage }}
-        variant="page"
-      />
-    </PageLayout>
-  );
-}
-
-export default function CustomerDetailPage(): ReactElement {
-  // Component implementation
+  const message = error instanceof Error ? error.message : "Unexpected error";
+  return <div>{message}</div>;
 }
 ```
+
+---
+
+### Server Boundary Rules
+
+All backend behavior must stay in `server/`:
+
+- `server/index.ts`: Hono HTTP wiring (CORS, static assets, `/trpc/*`, fallback)
+- `server/trpc/router.ts`: API procedure definitions
+- `server/services/erp.ts`: business logic
+- `server/schemas/*.ts`: validation and inferred types
+- `server/db.ts`: sql.js + filesystem persistence only
+
+Never import `server/db.ts` or `server/services/*` directly from `app/` route modules.
 
 ---
 
 ### Essential Hooks Reference
 
 ```typescript
-// Data access
-useLoaderData<typeof loader>(); // Access route loader data (typed)
-useActionData<typeof action>(); // Access route action results (typed)
-useFetcher<typeof action>(); // Independent fetch/submit (typed)
+// tRPC + React Query (primary data APIs)
+trpc.getCustomers.useQuery();
+trpc.getCustomerById.useQuery({ id });
+trpc.createCustomer.useMutation();
+trpc.updateCustomer.useMutation();
+trpc.deleteCustomer.useMutation();
+trpc.useUtils(); // invalidate/setData/cancel helpers
 
-// Navigation state
-useNavigation(); // Global navigation state
-useNavigation().state; // "idle" | "loading" | "submitting"
-useNavigation().location; // Pending location (if navigating)
-useNavigation().formData; // Pending form data (if submitting)
-useNavigation().formAction; // Action URL being submitted to
+// React Router hooks (routing/navigation concerns)
+useNavigate();
+useNavigation();
+useParams();
+useSearchParams();
+useLocation();
 
-// Fetcher state (per fetcher)
-fetcher.state; // "idle" | "loading" | "submitting"
-fetcher.data; // Response from last fetch/submit
-fetcher.formData; // Pending form data for optimistic UI
-fetcher.Form; // Form component bound to this fetcher
-
-// URL and routing
-useParams(); // URL parameters
-useSearchParams(); // Query string params
-useLocation(); // Current location object
-useNavigate(); // Programmatic navigation
-useMatches(); // All matched routes
-
-// Forms
-useSubmit(); // Programmatic form submission
-Form; // Declarative form (navigates)
-fetcher.Form; // Declarative form (no navigation)
-
-// Errors
-useRouteError(); // Error in error boundary
-isRouteErrorResponse(error); // Check if HTTP error response
-
-// View transitions
-useViewTransitionState(to); // Check if transitioning to a route
-```
-
-### Components Reference
-
-```typescript
-<Link to="/path">              // Navigation link
-<Link to="/path" viewTransition>  // With view transition
-
-<NavLink to="/path">           // Link with active/pending state
-<NavLink to="/path">
-  {({ isActive, isPending }) => <span>...</span>}
-</NavLink>
-
-<Form method="post">           // Declarative form (calls action, navigates)
-<Form method="post" action="/custom">  // Custom action URL
-
-<fetcher.Form method="post">   // Fetcher form (no navigation)
-
-<Outlet />                     // Render child routes
-<Outlet context={value} />     // With context for children
-
-<ScrollRestoration />          // Restore scroll on navigation
-
-<Await resolve={promise}>      // Render when promise resolves
-  {(data) => <Component data={data} />}
-</Await>
+// Root/route error handling hooks
+useRouteError();
+isRouteErrorResponse(error);
 ```
 
 ---
 
-### Common Patterns Reference
-
-#### Complete Route Module Pattern
+### Common Route Pattern (Current Project Style)
 
 ```typescript
-// routes/customers.tsx
-import type { Route } from "./+types/customers";
 import type { ReactElement } from "react";
-import { useLoaderData, useFetcher } from "react-router";
-import { getCustomers, deleteCustomer } from "~/services/customers";
+import { useNavigate, useParams } from "react-router";
+import { trpc } from "~/lib/trpc";
+import { Button } from "~/components/ui/Button";
+import { Alert } from "~/components/ui/Alert";
+import { Skeleton } from "~/components/ui/Skeleton";
 
-// 1. Loader - fetch data
-export async function loader(): Promise<{
-  customers: Customer[];
-  error: string | null;
-}> {
-  const result = await getCustomers();
+export default function CustomerDetailPage(): ReactElement {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
-  if (result.isErr()) {
-    return { customers: [], error: result.error.message };
-  }
+  const customerId = Number(id);
 
-  return { customers: result.value, error: null };
-}
-
-// 2. Action - handle mutations
-export async function action({
-  request,
-}: Route.ActionArgs): Promise<{ success: boolean; error?: string }> {
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "delete") {
-    const id = Number(formData.get("customerId"));
-    const result = await deleteCustomer(id);
-
-    if (result.isErr()) {
-      return { success: false, error: result.error.message };
-    }
-
-    return { success: true };
-  }
-
-  return { success: false, error: "Unknown action" };
-}
-
-// 3. Error boundary
-export function ErrorBoundary(): ReactElement {
-  const error = useRouteError();
-  return <ErrorDisplay error={{ message: String(error) }} variant="page" />;
-}
-
-// 4. Hydrate fallback (if using clientLoader)
-export function HydrateFallback(): ReactElement {
-  return <TableSkeleton rows={10} columns={4} />;
-}
-
-// 5. Component
-export default function CustomersPage(): ReactElement {
-  const { customers, error } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-
-  // Optimistic delete
-  const visibleCustomers = customers.filter((c) => {
-    if (
-      fetcher.formData?.get("intent") === "delete" &&
-      fetcher.formData.get("customerId") === String(c.id)
-    ) {
-      return false;
-    }
-    return true;
+  const customerQuery = trpc.getCustomerById.useQuery({ id: customerId }, {
+    enabled: Number.isFinite(customerId),
   });
 
-  if (error && customers.length === 0) {
-    return <ErrorDisplay error={{ message: error }} variant="page" />;
+  const deleteMutation = trpc.deleteCustomer.useMutation({
+    onSuccess: async () => {
+      await utils.getCustomers.invalidate();
+      void navigate("/");
+    },
+  });
+
+  if (customerQuery.isLoading) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (customerQuery.error) {
+    return <Alert variant="destructive">{customerQuery.error.message}</Alert>;
+  }
+
+  const customer = customerQuery.data;
+  if (!customer) {
+    return <Alert variant="destructive">Customer not found</Alert>;
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="Customers" />
+    <div className="space-y-4">
+      <h1>{customer.company_name}</h1>
 
-      {error && (
-        <Banner variant="warning" className="mb-4">
-          {error}
-        </Banner>
+      <Button
+        variant="destructive"
+        loading={deleteMutation.isPending}
+        onClick={() => deleteMutation.mutate({ id: customer.id })}
+      >
+        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+      </Button>
+
+      {deleteMutation.error && (
+        <Alert variant="destructive">{deleteMutation.error.message}</Alert>
       )}
-
-      <CustomerTable
-        customers={visibleCustomers}
-        onDelete={(id) => {
-          fetcher.submit(
-            { intent: "delete", customerId: id },
-            { method: "post" }
-          );
-        }}
-      />
-    </PageLayout>
+    </div>
   );
 }
 ```
 
 ---
 
-### Changes from React Router v6 to v7
+### Migration Notes (Old vs Current Pattern)
 
-#### Key Changes
+**Old pattern (no longer default in this project):**
 
-##### 1. `json()` and `defer()` Deprecated
+- Route `loader`/`action` driven data/mutations
+- SSR-first route data flow
 
-```typescript
-// v6
-export async function loader() {
-  return json({ data });
-}
+**Current pattern (required):**
 
-// v7 - return raw objects
-export async function loader() {
-  return { data };
-}
+- SPA route components + tRPC query/mutation hooks
+- Hono server provides API boundary and static hosting
+- Build output includes `build/client` (SPA assets) and `build/server` (compiled Hono server)
 
-// If need Response, use native API
-export async function loader() {
-  return Response.json({ data });
-}
-```
+**Config requirements to keep:**
 
-##### 2. Type Generation System (New in v7)
-
-React Router v7 auto-generates type declarations for each route in `.react-router/types/`. This is a new feature in v7 that provides full type safety for route modules.
-
-```bash
-# Generate types for routes
-npm run typegen
-```
-
-Provides type-safe `params`, `loaderData`, `actionData` via generated `Route` types.
-
-**IMPORTANT**: If you see errors like `Cannot find module './+types/...'`, run `npm run typegen` to generate the missing type files. This is required after:
-
-- Creating new route files
-- Renaming route files
-- Fresh clone/install
-
-##### 3. Route Module API
-
-```typescript
-// Access typed route args
-import type { Route } from "./+types/product";
-
-export async function loader({ params }: Route.LoaderArgs) {
-  // params.productId is typed
-}
-
-export default function Product({ loaderData }: Route.ComponentProps) {
-  // loaderData is typed based on loader return
-}
-```
-
-##### 4. Future Flags (Now Default)
-
-- `v7_startTransition` - Uses React.useTransition
-- `v7_fetcherPersist` - Fetcher persists until idle
-- `v7_skipActionErrorRevalidation` - Skip revalidation on errors
-
----
+- `react-router.config.ts` uses `ssr: false`
+- `react-router.config.ts` enables `future.v8_viteEnvironmentApi: true`
+- `vite.config.ts` uses Vite 8-compatible settings

@@ -54,26 +54,29 @@
 
 This template demonstrates:
 
-- **Modern Stack**: React Router v7.13 with SSR, Vite 8, TypeScript strict mode
+- **Modern Stack**: React Router v7.13 SPA mode with Hono + tRPC backend, Vite 8, TypeScript strict mode
 - **Type Safety**: Zod v4 schemas + neverthrow Result pattern for error handling
 - **Database Layer**: SQLite via sql.js with proper abstraction and migration system
 - **UI Patterns**: Tailwind CSS v4 with professional custom theme and reusable components
 - **Code Quality**: Type-aware linting (oxlint), comprehensive testing setup
-- **Architecture**: Clean separation of concerns (db, services, schemas, routes, components)
+- **Architecture**: Clean client/server separation (`app/` + `server/`) with typed API boundary
 
 ## Tech Stack
 
-| Package      | Version       | Purpose                    |
-| ------------ | ------------- | -------------------------- |
-| react-router | 7.13.0        | Full-stack React framework |
-| vite         | 8.0.0-beta.12 | Build tool                 |
-| tailwindcss  | 4.1.18        | Styling                    |
-| shadcn/ui    | latest        | UI component library       |
-| zod          | 4.3.6         | Schema validation          |
-| neverthrow   | 8.2.0         | Type-safe error handling   |
-| vitest       | 4.0.x         | Testing framework          |
-| oxlint       | 1.x           | Type-aware linting         |
-| sql.js       | 1.13.0        | SQLite in JavaScript       |
+| Package        | Version       | Purpose                          |
+| -------------- | ------------- | -------------------------------- |
+| react-router   | 7.13.0        | Client routing framework         |
+| vite           | 8.0.0-beta.13 | Build tool                       |
+| hono           | ^4.12.1       | HTTP server                      |
+| @trpc/server   | ^11.10.0      | Type-safe API layer              |
+| @trpc/react-query | ^11.10.0   | Typed client hooks               |
+| @tanstack/react-query | ^5.90.21 | Query/mutation state management |
+| tailwindcss    | 4.1.18        | Styling                          |
+| zod            | 4.3.6         | Schema validation                |
+| neverthrow     | 8.2.0         | Type-safe error handling         |
+| vitest         | 4.0.18        | Testing framework                |
+| oxlint         | 1.47.0        | Type-aware linting               |
+| sql.js         | 1.14.0        | SQLite in JavaScript             |
 
 ## 🎨 Design
 
@@ -102,33 +105,52 @@ npm run build
 ```
 app/
 ├── components/
-│   ├── layout/          # Sidebar, TopBar, PageLayout, PageHeader
-│   ├── ui/              # Table, Modal, Tabs, Select, StatusBadge, etc.
-│   └── sales/           # Sales-specific components
+│   ├── layout/          # Page layout primitives
+│   └── ui/              # Reusable UI components
+├── hooks/
+│   └── use-mobile.tsx   # Client hook
+├── lib/
+│   ├── trpc.ts          # Typed tRPC client
+│   ├── trpc-provider.tsx # Provider composition
+│   └── utils.ts         # Client utilities
 ├── routes/
-│   ├── dashboard.tsx    # Main dashboard
-│   ├── sales/           # Sales & CRM routes (customers, leads, quotes)
-│   └── accounting/      # Accounting routes (invoices, payments, reports)
-├── services/
-│   └── erp.ts           # ERP business logic & CRUD operations
-├── schemas/
-│   ├── sales.ts         # Sales entity validation (Zod)
-│   └── accounting.ts    # Accounting entity validation (Zod)
-├── db-migrations/
-│   ├── migrate.ts       # Migration system (uses db.ts)
-│   ├── 001-erp-schema.ts # ERP database schema
-│   └── run-migrations.ts # Migration runner
+│   ├── index.tsx        # Customers list route
+│   ├── customers.new.tsx # Create customer route
+│   └── customers.$id.tsx # Customer detail route
 ├── utils/
-│   ├── calculations.ts  # Financial calculations
-│   └── json.ts          # JSON response helper
-└── db.ts                # Database layer (sql.js) - ONLY file for filesystem
+│   └── logger.ts        # Client logging utility
+├── routes.ts            # React Router route config
+└── root.tsx             # Root app shell
+
+server/
+├── db.ts                # Database layer (sql.js + persistence)
+├── index.ts             # Hono app setup + static serving + /trpc/*
+├── start.ts             # Production server entrypoint
+├── db-migrations/
+│   ├── migrate.ts       # Migration engine
+│   ├── run-migrations.ts # Migration runner
+│   └── 001-erp-schema.ts # ERP schema migration
+├── trpc/
+│   ├── index.ts         # tRPC initialization
+│   └── router.ts        # API procedures
+├── services/
+│   └── erp.ts           # Business logic
+├── schemas/
+│   ├── index.ts         # Schema exports
+│   └── sales.ts         # Sales/customer schemas
+├── types/
+│   └── errors.ts        # Error contracts
+├── utils/
+│   ├── calculations.ts  # Domain calculations
+│   └── validate.ts      # Validation helpers
+└── tsconfig.json
 ```
 
 ## 🗄️ Database Architecture
 
 **Technology**: SQLite via sql.js (in-memory with file persistence to `../sqlite/database.db`)
 
-**Key Pattern**: All database operations go through `db.ts` (single source of truth for filesystem access)
+**Key Pattern**: All database operations go through `server/db.ts` (single source of truth for filesystem access)
 
 ### Tables Implemented
 
@@ -177,10 +199,14 @@ npm run dev
 
 | Script              | Description                          |
 | ------------------- | ------------------------------------ |
-| `npm run dev`       | Start development server             |
-| `npm run build`     | Production build                     |
-| `npm run start`     | Start production server              |
-| `npm run migrate`   | Run database migrations              |
+| `npm run dev`       | Start client and server concurrently |
+| `npm run dev:client`| React Router dev server              |
+| `npm run dev:server`| Hono server in watch mode            |
+| `npm run build`     | Build client + server                |
+| `npm run build:client` | Build client bundle               |
+| `npm run build:server` | Compile server TypeScript         |
+| `npm run start`     | Start production Hono server         |
+| `npm run migrate`   | Run server database migrations       |
 | `npm run typecheck` | TypeScript type checking             |
 | `npm run lint`      | Type-aware linting with oxlint       |
 | `npm test`          | Run all tests                        |
@@ -192,7 +218,6 @@ npm run dev
 
 ```bash
 npm test              # Run all tests
-npm run test:watch   # Watch mode
 npm run check        # Full check (includes tests)
 ```
 
@@ -200,21 +225,19 @@ npm run check        # Full check (includes tests)
 
 Tests cover:
 
-- UI components (Button, Card, Input, Badge, Alert, Table, Modal, Select)
-- Database CRUD operations (customers, invoices)
-- API routes (loaders and actions)
-- ERP service layer (business logic)
-- Validation with Zod schemas
+- UI components (Button, Card, Input, Badge, Alert, Table)
+- Database operations
+- Server-side service/business logic
 
 All tests use Vitest and React Testing Library.
 
 ## 🏗️ Application Modules
 
-The codebase includes example modules to demonstrate full-stack patterns:
+The codebase currently centers on the customer module to demonstrate end-to-end patterns:
 
-- **Sales & CRM** - Customer management, leads tracking, quotes, orders
-- **Accounting & Finance** - Chart of accounts, invoices, payments, reports
-- **Dashboard** - Overview with metrics, charts, and quick actions
+- **Customers** - List, create, and detail views
+- **Typed API** - tRPC procedures consumed via React Query hooks
+- **Server Data Layer** - Services, schemas, migrations, and sql.js persistence
 
 > **For development guidelines, coding patterns, and architectural rules**, see [AGENTS.md](./AGENTS.md)
 

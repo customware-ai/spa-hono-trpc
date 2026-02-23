@@ -13,15 +13,4 @@ export default defineConfig({
   build: {
     minify: "oxc",
   },
-  environments: {
-    ssr: {
-      build: {
-        rolldownOptions: {
-          output: {
-            codeSplitting: false,
-          },
-        },
-      },
-    },
-  },
 });

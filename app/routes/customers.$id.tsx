@@ -1,17 +1,12 @@
 /**
- * Customer Detail Route
+ * Customer Detail Route - Client-Side Rendered with tRPC
  *
  * Displays comprehensive customer information.
+ * Fetches data using tRPC React Query hooks.
  */
 
 import type { ReactElement } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import type { Route } from "./+types/customers.$id";
-import {
-  useLoaderData,
-  useRouteError,
-  isRouteErrorResponse,
-} from "react-router";
+import { useParams } from "react-router";
 import { ShoppingBag, DollarSign, Activity } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -24,120 +19,73 @@ import {
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Alert } from "../components/ui/Alert";
-import { getCustomerById } from "../services/erp";
-import type { Customer } from "../schemas";
+import { trpc } from "../lib/trpc";
 
 /**
- * Loader - fetches customer details
+ * Customer Detail Page Component
  */
-export async function loader({ params }: LoaderFunctionArgs): Promise<{
-  customer: Customer;
-}> {
-  const id = parseInt(params.id!);
-  const result = await getCustomerById(id);
-
-  if (result.isErr() || !result.value) {
-    throw new Response("Customer not found", { status: 404 });
-  }
-
-  return {
-    customer: result.value,
-  };
-}
-
-/**
- * Client loader - enables fast client-side navigation
- */
-export async function clientLoader({
-  serverLoader,
-}: Route.ClientLoaderArgs): Promise<{ customer: Customer }> {
-  return serverLoader();
-}
-
-clientLoader.hydrate = true as const;
-
-/**
- * HydrateFallback - shown while clientLoader runs
- */
-export function HydrateFallback(): ReactElement {
-  return (
-    <PageLayout
-      breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Loading..." }]}
-    >
-      <PageHeader title="Loading..." />
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <Skeleton className="h-6 w-48 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                "company",
-                "status",
-                "email",
-                "phone",
-                "city",
-                "country",
-                "website",
-                "notes",
-              ].map((field) => (
-                <div key={field}>
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-5 w-40" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {["orders", "outstanding", "revenue"].map((stat) => (
-            <Card key={stat}>
-              <CardContent className="pt-6">
-                <Skeleton className="h-4 w-32 mb-3" />
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </PageLayout>
-  );
-}
-
-/**
- * ErrorBoundary - Handles errors in this route
- */
-export function ErrorBoundary(): ReactElement {
-  const error = useRouteError();
-
-  const errorMessage = isRouteErrorResponse(error)
-    ? error.statusText || "An error occurred"
-    : error instanceof Error
-      ? error.message
-      : "An unexpected error occurred";
-
-  return (
-    <PageLayout
-      breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Error" }]}
-    >
-      <PageHeader title="Customer" />
-      <Alert variant="destructive">{errorMessage}</Alert>
-    </PageLayout>
-  );
-}
 
 export default function CustomerDetailPage(): ReactElement {
-  const { customer } = useLoaderData<typeof loader>();
+  const params = useParams();
+  const customerId = parseInt(params.id || "0");
 
-  if (!customer) {
+  // Fetch customer using tRPC
+  const { data: customer, isLoading, error } = trpc.getCustomer.useQuery(
+    { id: customerId },
+    { enabled: customerId > 0 }
+  );
+
+  // Show loading state
+  if (isLoading) {
     return (
-      <PageLayout>
-        <Card>
-          <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">
-              Customer not found
-            </p>
-          </CardContent>
-        </Card>
+      <PageLayout
+        breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Loading..." }]}
+      >
+        <PageHeader title="Loading..." />
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-6 w-48 mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  "company",
+                  "status",
+                  "email",
+                  "phone",
+                ].map((field) => (
+                  <div key={field}>
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-5 w-40" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {["orders", "outstanding", "revenue"].map((stat) => (
+              <Card key={stat}>
+                <CardContent className="pt-6">
+                  <Skeleton className="h-4 w-32 mb-3" />
+                  <Skeleton className="h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Show error state
+  if (error || !customer) {
+    return (
+      <PageLayout
+        breadcrumbs={[{ label: "Customers", href: "/" }, { label: "Error" }]}
+      >
+        <PageHeader title="Customer" />
+        <Alert variant="destructive">
+          {error?.message || "Customer not found"}
+        </Alert>
       </PageLayout>
     );
   }

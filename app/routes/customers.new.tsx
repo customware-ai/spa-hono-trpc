@@ -1,19 +1,12 @@
 /**
- * New Customer Form Route
+ * New Customer Form Route - Client-Side Rendered with tRPC
  *
- * Form for creating new customer records.
+ * Form for creating new customer records using tRPC mutation.
  */
 
 import type { ReactElement } from "react";
-import { useState } from "react";
-import type { ActionFunctionArgs } from "react-router";
-import {
-  Form,
-  useNavigate,
-  useActionData,
-  useRouteError,
-  isRouteErrorResponse,
-} from "react-router";
+import type { FormEvent } from "react";
+import { useNavigate } from "react-router";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
@@ -23,87 +16,44 @@ import { Textarea } from "../components/ui/Textarea";
 import { Select } from "../components/ui/Select";
 import { Label } from "../components/ui/Label";
 import { Alert } from "../components/ui/Alert";
-import { createCustomer } from "../services/erp";
-import { CreateCustomerSchema } from "../schemas";
-import { redirect } from "react-router";
+import { trpc } from "../lib/trpc";
 
 /**
- * Action function - handles form submission
+ * New Customer Form Component
  */
-export async function action({ request }: ActionFunctionArgs): Promise<
-  | Response
-  | {
-      error: string;
-      fieldErrors: Record<string, string[]>;
-    }
-> {
-  const formData = await request.formData();
-
-  // Extract form data
-  const data = {
-    company_name: formData.get("company_name") as string,
-    email: (formData.get("email") as string) || null,
-    phone: (formData.get("phone") as string) || null,
-    status: (formData.get("status") as string) || "active",
-    notes: (formData.get("notes") as string) || null,
-  };
-
-  // Validate with Zod schema
-  const validation = CreateCustomerSchema.safeParse(data);
-
-  if (!validation.success) {
-    return {
-      error: "Validation failed",
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
-  }
-
-  // Create customer in database
-  const result = await createCustomer(validation.data);
-
-  if (result.isErr()) {
-    return {
-      error: result.error.message,
-      fieldErrors: {},
-    };
-  }
-
-  // Redirect to customers list on success
-  return redirect("/");
-}
-
-/**
- * ErrorBoundary - Handles errors in this route
- */
-export function ErrorBoundary(): ReactElement {
-  const error = useRouteError();
-
-  const errorMessage = isRouteErrorResponse(error)
-    ? error.statusText || "An error occurred"
-    : error instanceof Error
-      ? error.message
-      : "An unexpected error occurred";
-
-  return (
-    <PageLayout
-      breadcrumbs={[
-        { label: "Customers", href: "/" },
-        { label: "New Customer" },
-      ]}
-    >
-      <PageHeader
-        title="New Customer"
-        description="Create a new customer record with contact and billing information."
-      />
-      <Alert variant="destructive">{errorMessage}</Alert>
-    </PageLayout>
-  );
-}
 
 export default function NewCustomerPage(): ReactElement {
   const navigate = useNavigate();
-  const actionData = useActionData<typeof action>();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const utils = trpc.useUtils();
+  
+  // tRPC mutation for creating customer
+  const createCustomer = trpc.createCustomer.useMutation({
+    onSuccess: () => {
+      // Invalidate customers query to refetch data
+      void utils.getCustomers.invalidate();
+      // Navigate back to customers list
+      void navigate("/");
+    },
+  });
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    // Extract and validate form data
+    const data = {
+      company_name: formData.get("company_name") as string,
+      email: (formData.get("email") as string) || undefined,
+      phone: (formData.get("phone") as string) || undefined,
+      status: (formData.get("status") as "active" | "inactive") || "active",
+      notes: (formData.get("notes") as string) || undefined,
+    };
+
+    createCustomer.mutate(data);
+  };
+
+  const isSubmitting = createCustomer.isPending;
+  const error = createCustomer.error;
 
   return (
     <PageLayout
@@ -118,14 +68,14 @@ export default function NewCustomerPage(): ReactElement {
       />
 
       {/* Error Alert */}
-      {actionData?.error && (
+      {error && (
         <Alert variant="destructive" className="mb-6">
-          {actionData.error}
+          {error.message}
         </Alert>
       )}
 
       <Card>
-        <Form method="post" onSubmit={() => setIsSubmitting(true)}>
+        <form onSubmit={handleSubmit}>
           <CardContent className="p-6 pt-0 space-y-6">
             {/* Company Name */}
             <div className="space-y-2">
@@ -138,12 +88,8 @@ export default function NewCustomerPage(): ReactElement {
                 type="text"
                 required
                 placeholder="Sample Company Inc"
+                disabled={isSubmitting}
               />
-              {actionData?.fieldErrors?.company_name && (
-                <p className="mt-1 text-sm text-destructive font-medium">
-                  {actionData.fieldErrors.company_name[0]}
-                </p>
-              )}
             </div>
 
             {/* Contact Information */}
@@ -155,6 +101,7 @@ export default function NewCustomerPage(): ReactElement {
                   name="email"
                   type="email"
                   placeholder="contact@sample-company.com"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -165,6 +112,7 @@ export default function NewCustomerPage(): ReactElement {
                   name="phone"
                   type="tel"
                   placeholder="+1 (555) 123-4567"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -172,6 +120,7 @@ export default function NewCustomerPage(): ReactElement {
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
+              <input type="hidden" name="status" value="active" />
               <Select
                 options={[
                   { label: "Active", value: "active" },
@@ -179,14 +128,11 @@ export default function NewCustomerPage(): ReactElement {
                 ]}
                 value="active"
                 placeholder="Select status"
+                disabled={isSubmitting}
                 onChange={(_val) => {
-                  // Note: In a real Form submission with native select it would work,
-                  // but shadcn Select needs a hidden input to work with native Form if not using controlled state.
-                  // Or we can just use the primitive Select if we want to stay closer to native.
-                  // For now I'll add a hidden input.
+                  // Controlled by hidden input for now
                 }}
               />
-              <input type="hidden" name="status" value="active" />
             </div>
 
             {/* Notes */}
@@ -197,6 +143,7 @@ export default function NewCustomerPage(): ReactElement {
                 name="notes"
                 rows={3}
                 placeholder="Add any additional notes about this customer..."
+                disabled={isSubmitting}
               />
             </div>
           </CardContent>
@@ -219,7 +166,7 @@ export default function NewCustomerPage(): ReactElement {
               Create Customer
             </Button>
           </CardFooter>
-        </Form>
+        </form>
       </Card>
     </PageLayout>
   );

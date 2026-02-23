@@ -72,4 +72,4 @@ export interface LoaderData {
 // ============================================================
 // Export Sales & CRM Schemas
 // ============================================================
-export * from './sales';
+export * from './sales.js';

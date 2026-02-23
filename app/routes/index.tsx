@@ -1,13 +1,6 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import type { Route } from "./+types/index";
-import {
-  useLoaderData,
-  useNavigate,
-  useRouteError,
-  isRouteErrorResponse,
-} from "react-router";
+import { useNavigate } from "react-router";
 import { Plus, Users } from "lucide-react";
 import { PageLayout } from "../components/layout/PageLayout";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -25,106 +18,25 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/Table";
-import { getCustomers } from "../services/erp";
-import type { Customer } from "../schemas";
+import { trpc } from "../lib/trpc";
+import type { Customer } from "../../server/schemas/sales";
 
 /**
- * Loader function - fetches customers from database
- * Runs on the server before rendering the page
+ * Customers Index Page - Client-Side Rendered with tRPC
+ * 
+ * This page fetches customer data using tRPC React Query hooks.
+ * All data fetching happens on the client side.
  */
-export async function loader({ request }: LoaderFunctionArgs): Promise<{
-  customers: Customer[];
-  error: string | null;
-}> {
-  // Get query parameters from URL for filtering
-  const url = new URL(request.url);
-  const search = url.searchParams.get("search") || undefined;
-  const status =
-    (url.searchParams.get("status") as "active" | "inactive") || undefined;
-
-  // Fetch customers with filters
-  const result = await getCustomers({ search, status });
-
-  if (result.isErr()) {
-    return {
-      customers: [],
-      error: result.error.message,
-    };
-  }
-
-  return {
-    customers: result.value,
-    error: null,
-  };
-}
-
-/**
- * Client loader - enables fast client-side navigation
- * On initial load: uses server data (SSR)
- * On subsequent navigations: fetches directly on client (faster)
- */
-export async function clientLoader({
-  serverLoader,
-}: Route.ClientLoaderArgs): Promise<{
-  customers: Customer[];
-  error: string | null;
-}> {
-  return serverLoader();
-}
-
-// Enable client loader during hydration for consistent behavior
-clientLoader.hydrate = true as const;
-
-/**
- * HydrateFallback - shown while clientLoader runs
- */
-export function HydrateFallback(): ReactElement {
-  return (
-    <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-      <PageHeader
-        title="Customers"
-        description="Manage your customer relationships and contact information."
-      />
-      <div className="space-y-3">
-        <Skeleton className="h-10 w-full" />
-        {["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"].map((key) => (
-          <Skeleton key={key} className="h-12 w-full" />
-        ))}
-      </div>
-    </PageLayout>
-  );
-}
-
-/**
- * ErrorBoundary - Handles errors in this route
- */
-export function ErrorBoundary(): ReactElement {
-  const error = useRouteError();
-
-  const errorMessage = isRouteErrorResponse(error)
-    ? error.statusText || "An error occurred"
-    : error instanceof Error
-      ? error.message
-      : "An unexpected error occurred";
-
-  return (
-    <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-      <PageHeader
-        title="Customers"
-        description="Manage your customer relationships and contact information."
-      />
-      <Alert variant="destructive">{errorMessage}</Alert>
-    </PageLayout>
-  );
-}
 
 export default function IndexPage(): ReactElement {
-  const { customers, error } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  // Local state for filters (client-side filtering for demo)
+  // Local state for filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Fetch customers using tRPC
+  const { data: customers = [], isLoading, error } = trpc.getCustomers.useQuery();
 
   // Filter customers based on local state
   const filteredCustomers = customers.filter((customer: Customer) => {
@@ -138,6 +50,24 @@ export default function IndexPage(): ReactElement {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Show loading skeleton
+  if (isLoading) {
+    return (
+      <PageLayout breadcrumbs={[{ label: "Customers" }]}>
+        <PageHeader
+          title="Customers"
+          description="Manage your customer relationships and contact information."
+        />
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          {["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"].map((key) => (
+            <Skeleton key={key} className="h-12 w-full" />
+          ))}
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout breadcrumbs={[{ label: "Customers" }]}>
@@ -155,7 +85,7 @@ export default function IndexPage(): ReactElement {
       {/* Error Alert */}
       {error && (
         <Alert variant="destructive" className="mb-6">
-          {error}
+          {error.message}
         </Alert>
       )}
 

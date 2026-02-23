@@ -27,21 +27,21 @@
 
 import { z } from "zod";
 import { Result, ok, err } from "neverthrow";
-import { getDatabase, saveDatabase } from "../db";
+import { getDatabase, saveDatabase } from "../db.js";
 import type { SqlValue } from "sql.js";
-import type { Database } from "../db";
-import type { DatabaseError } from "../types/errors";
+import type { Database } from "../db.js";
+import type { DatabaseError } from "../types/errors.js";
 import {
   generateDocumentNumber,
-} from "../utils/calculations";
+} from "../utils/calculations.js";
 import {
   CustomerSchema,
-} from "../schemas";
+} from "../schemas/sales.js";
 import type {
   Customer,
   CreateCustomer,
   UpdateCustomer,
-} from "../schemas";
+} from "../schemas/sales.js";
 
 /**
  * Creates a typed DatabaseError object
@@ -403,5 +403,5 @@ export async function getDemoQuotes(): Promise<Array<{ id: number; quote_number:
   }));
 }
 
-// Export all functions
-export * from "../schemas";
+// Export all schema types
+export * from "../schemas/sales.js";

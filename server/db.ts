@@ -6,9 +6,9 @@ import initSqlJs, {
 import * as fs from "fs";
 import * as path from "path";
 import { Result, ok, err } from "neverthrow";
-import type { DatabaseError, ValidationError } from "./types/errors";
-import { validate } from "./utils/validate";
-import { CreateUserSchema, CreateTaskSchema } from "./schemas";
+import type { DatabaseError, ValidationError } from "./types/errors.js";
+import { validate } from "./utils/validate.js";
+import { CreateUserSchema, CreateTaskSchema } from "./schemas/index.js";
 
 export type { Database, SqlJsStatic, QueryExecResult };
 export type SqlValue = number | string | Uint8Array | null;

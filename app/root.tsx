@@ -16,6 +16,7 @@ import "./app.css";
 import { logger } from "./utils/logger";
 import { Card, CardContent } from "./components/ui/Card";
 import { Button } from "./components/ui/Button";
+import { TRPCProvider } from "./lib/trpc-provider";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -66,8 +67,24 @@ export function Layout({
   );
 }
 
+/**
+ * HydrateFallback - Required for SPA mode
+ * This is rendered during the initial page load while the app hydrates.
+ */
+export function HydrateFallback(): ReactElement {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    </div>
+  );
+}
+
 export default function App(): ReactElement {
-  return <Outlet />;
+  return (
+    <TRPCProvider>
+      <Outlet />
+    </TRPCProvider>
+  );
 }
 
 export function ErrorBoundary({
