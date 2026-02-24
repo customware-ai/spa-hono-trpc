@@ -63,20 +63,20 @@ This template demonstrates:
 
 ## Tech Stack
 
-| Package        | Version       | Purpose                          |
-| -------------- | ------------- | -------------------------------- |
-| react-router   | 7.13.0        | Client routing framework         |
-| vite           | 8.0.0-beta.13 | Build tool                       |
-| hono           | ^4.12.1       | HTTP server                      |
-| @trpc/server   | ^11.10.0      | Type-safe API layer              |
-| @trpc/react-query | ^11.10.0   | Typed client hooks               |
-| @tanstack/react-query | ^5.90.21 | Query/mutation state management |
-| tailwindcss    | 4.1.18        | Styling                          |
-| zod            | 4.3.6         | Schema validation                |
-| neverthrow     | 8.2.0         | Type-safe error handling         |
-| vitest         | 4.0.18        | Testing framework                |
-| oxlint         | 1.47.0        | Type-aware linting               |
-| sql.js         | 1.14.0        | SQLite in JavaScript             |
+| Package               | Version       | Purpose                         |
+| --------------------- | ------------- | ------------------------------- |
+| react-router          | 7.13.0        | Client routing framework        |
+| vite                  | 8.0.0-beta.13 | Build tool                      |
+| hono                  | ^4.12.1       | HTTP server                     |
+| @trpc/server          | ^11.10.0      | Type-safe API layer             |
+| @trpc/react-query     | ^11.10.0      | Typed client hooks              |
+| @tanstack/react-query | ^5.90.21      | Query/mutation state management |
+| tailwindcss           | 4.1.18        | Styling                         |
+| zod                   | 4.3.6         | Schema validation               |
+| neverthrow            | 8.2.0         | Type-safe error handling        |
+| vitest                | 4.0.18        | Testing framework               |
+| oxlint                | 1.47.0        | Type-aware linting              |
+| sql.js                | 1.14.0        | SQLite in JavaScript            |
 
 ## 🎨 Design
 
@@ -197,20 +197,17 @@ npm run dev
 
 ## 📝 Scripts
 
-| Script              | Description                          |
-| ------------------- | ------------------------------------ |
-| `npm run dev`       | Start client and server concurrently |
-| `npm run dev:client`| React Router dev server              |
-| `npm run dev:server`| Hono server in watch mode            |
-| `npm run build`     | Build client + server                |
-| `npm run build:client` | Build client bundle               |
-| `npm run build:server` | Compile server TypeScript         |
-| `npm run start`     | Start production Hono server         |
-| `npm run migrate`   | Run server database migrations       |
-| `npm run typecheck` | TypeScript type checking             |
-| `npm run lint`      | Type-aware linting with oxlint       |
-| `npm test`          | Run all tests                        |
-| `npm run check`     | Run typecheck, lint, build, and test |
+| Script                 | Description                          |
+| ---------------------- | ------------------------------------ |
+| `npm run build`        | Build client + server                |
+| `npm run build:client` | Build client bundle                  |
+| `npm run build:server` | Compile server TypeScript            |
+| `npm run start`        | Start production Hono server         |
+| `npm run migrate`      | Run server database migrations       |
+| `npm run typecheck`    | TypeScript type checking             |
+| `npm run lint`         | Type-aware linting with oxlint       |
+| `npm test`             | Run all tests                        |
+| `npm run check`        | Run typecheck, lint, build, and test |
 
 ## 🧪 Testing
 
