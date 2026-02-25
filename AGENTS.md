@@ -21,7 +21,7 @@ Jump to section:
 | [UX Requirements](#-user-experience-ux-requirements)  | Loading states, error handling, responsive design, animation |
 | [React Component Patterns](#react-component-patterns) | Component structure, route patterns                          |
 | [Testing Patterns](#testing-patterns)                 | Component and service testing                                |
-| [React Router v7 Reference](#react-router-v7-guide)   | SPA routing, pending UI, optimistic UI, tRPC patterns        |
+| [React Router v7 Reference](#react-router-v7-guide)   | Client routing, `routes.ts` APIs, and tRPC query/mutations   |
 | [Autonomous Task Workflow](#autonomous-task-workflow) | Context management, task completion                          |
 
 ### Key Import Paths
@@ -562,7 +562,7 @@ tests/                   # Test files mirror active app/server boundaries
 
 **CRITICAL**: This section defines mandatory UX patterns for all user-facing code. Every route, form, and interactive element MUST implement these patterns. Poor UX is a bug - treat it with the same severity as broken functionality.
 
-> **Important**: All UX patterns in this section integrate with React Router v7 + tRPC React Query. See the [React Router v7 Reference Guide](#react-router-v7-guide) section for implementation details on `useNavigation`, query/mutation pending states, and optimistic UI.
+> **Important**: All UX patterns in this section integrate with React Router v7 navigation plus tRPC React Query state. See the [React Router v7 Reference Guide](#react-router-v7-guide) section for routing, query, and mutation patterns.
 
 ---
 
@@ -611,7 +611,7 @@ const isSubmitting = createCustomer.isPending;
 
 **All mutations MUST implement optimistic UI.** Predict the outcome and update UI immediately while the request processes.
 
-> **Full Implementation**: See [React Router v7 Reference Guide > Optimistic UI Patterns](#optimistic-ui-patterns) for complete examples.
+> **Full Implementation**: Use the patterns in this section; React Router guidance focuses on client navigation APIs and route boundaries.
 
 **Core Pattern:** Use pending mutation variables or React Query cache updates to render predicted state:
 
@@ -643,7 +643,7 @@ Use collapsible sections to reduce cognitive load. Show primary fields first, re
 
 **Every error state MUST be user-friendly, actionable, and recoverable.** Technical errors should never be shown directly to users.
 
-> **Implementation**: See [React Router v7 Reference Guide > Error Handling](#error-handling) for error boundary patterns.
+> **Implementation**: Use route-level `ErrorBoundary` exports for unexpected rendering/runtime failures.
 
 #### Core Principles
 
@@ -937,53 +937,174 @@ Use `--status failed` if the task cannot be completed, with a summary explaining
 
 ## React Router v7 Guide
 
-> **CRITICAL**: This section is the authoritative reference for routing/data UI patterns in this codebase. This project runs React Router in SPA mode and uses tRPC for all backend data access.
+> **CRITICAL**: This section is the authoritative reference for **client-side routing only**. In this codebase, React Router is used for navigation, route hierarchy, and route module boundaries (not as a full-stack data framework).
 
 ### Overview
 
 This app uses:
 
-- **React Router v7** for client routing and route module boundaries
-- **SPA mode** (`ssr: false`) with build-time generated `index.html`
-- **Hono server** for static asset serving + `/trpc/*` API endpoint + SPA fallback
-- **tRPC + React Query** for typed queries/mutations
+- **React Router v7** for client-side URL matching and navigation
+- **Route config in `app/routes.ts`** using `@react-router/dev/routes` helpers
+- **Route modules in `app/routes/*.tsx`** and layouts in `app/layouts/*.tsx`
+- **tRPC + React Query hooks** inside route modules for typed query/mutation flows
 
 **What this means:**
 
-- Do not build new route features around `loader`/`action`
-- Route components should orchestrate UI + `trpc.*.useQuery()`/`useMutation()`
-- Server logic belongs in `server/trpc/router.ts` → `server/services/` → `server/db/queries/`
+- React Router guidance here is about `routes.ts`, route modules, and navigation APIs
+- Keep routing concerns in `app/routes.ts` + route/layout modules
+- Route modules orchestrate UI and call `trpc.*.useQuery()` / `trpc.*.useMutation()`
 
 ---
 
-### Route Module Strategy
+### `routes.ts` API (Authoritative)
 
-Use simple route modules focused on rendering and hook orchestration.
+`app/routes.ts` defines the route tree. Prefer helper functions from `@react-router/dev/routes`:
 
-**Required in every route module:**
+```typescript
+import {
+  type RouteConfig,
+  index,
+  layout,
+  route,
+} from "@react-router/dev/routes";
 
-1. Default route component with explicit `ReactElement` return type
-2. Loading UI from query/mutation state
-3. Error UI from query/mutation state
-4. Pending state on submit buttons
+export default [
+  layout("layouts/MainLayout.tsx", [
+    index("routes/index.tsx"),
+    route("customers/new", "routes/customers.new.tsx"),
+  ]),
+] satisfies RouteConfig;
+```
 
-**Optional exports:**
+**Primary helpers:**
 
-- `ErrorBoundary` for unexpected render/runtime route errors
-- `meta`/`links` when route-specific metadata is needed
+1. `layout(file, children)` - Defines a layout route that renders an `Outlet`
+2. `index(file)` - Defines the default child route at the parent's exact path
+3. `route(path, file, children?)` - Defines a path route and optional nested children
+4. `prefix(prefixPath, routes)` - Adds a shared URL prefix without a parent route file
+5. `relative(directory)` - Builds helper set scoped to another directory when splitting route config
+
+**`routes.ts` rules:**
+
+- Route module file paths are relative to `app/`
+- Keep route config declarative; avoid runtime conditionals in route definitions
+- Use `satisfies RouteConfig` on default export
+- Prefer `layout(...)` for shared shells instead of duplicating wrappers across route files
+
+---
+
+### Layout Route Contract
+
+Layout modules (for example, `app/layouts/MainLayout.tsx`) should provide shared UI and render children with `Outlet`.
+
+```typescript
+import type { ReactElement } from "react";
+import { Outlet } from "react-router";
+
+export default function MainLayout(): ReactElement {
+  return (
+    <main>
+      {/* shared nav/header/chrome */}
+      <Outlet />
+    </main>
+  );
+}
+```
+
+---
+
+### Route Module Exports
+
+Every route module should export:
+
+1. `default` route component (`ReactElement` return type)
+2. Optional `ErrorBoundary` for unexpected route rendering/runtime failures
+3. Optional metadata exports such as `meta` and `links` when needed
+
+Route modules should keep routing concerns local and use `trpc` hooks for data reads/writes.
+
+---
+
+### Client Navigation APIs
+
+Use these hooks/components for routing concerns in client code:
+
+```typescript
+// Declarative navigation
+<Link to="/" />
+<NavLink to="/customers/new" />
+
+// Imperative navigation
+const navigate = useNavigate();
+navigate("/customers/new");
+navigate(-1);
+
+// Route state
+const navigation = useNavigation();
+const isNavigating = navigation.state !== "idle";
+const params = useParams();
+const [searchParams, setSearchParams] = useSearchParams();
+const location = useLocation();
+
+// Route-level error boundary helpers
+const error = useRouteError();
+isRouteErrorResponse(error);
+```
+
+Use `useNavigation()` for global transition UI in layouts:
+
+```typescript
+import { useNavigation } from "react-router";
+
+function LayoutShell(): ReactElement {
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== "idle";
+
+  return (
+    <div>
+      {isNavigating && <div className="h-1 w-full animate-pulse bg-primary" />}
+      {/* layout content */}
+    </div>
+  );
+}
+```
+
+---
+
+### Essential Hooks Reference
+
+```typescript
+// tRPC + React Query (primary data APIs)
+trpc.getCustomers.useQuery();
+trpc.getCustomerById.useQuery({ id });
+trpc.createCustomer.useMutation();
+trpc.updateCustomer.useMutation();
+trpc.deleteCustomer.useMutation();
+trpc.useUtils(); // invalidate/setData/cancel helpers
+
+// React Router hooks (routing/navigation concerns)
+useNavigate();
+useNavigation();
+useParams();
+useSearchParams();
+useLocation();
+
+// Root/route error handling hooks
+useRouteError();
+isRouteErrorResponse(error);
+```
 
 ---
 
 ### Data Fetching (Queries)
 
-All read operations should use `trpc.*.useQuery()`.
+Use `trpc.*.useQuery()` for route-level reads:
 
 ```typescript
 import type { ReactElement } from "react";
 import { trpc } from "~/lib/trpc";
-import { PageLayout } from "~/components/layout/PageLayout";
-import { Skeleton } from "~/components/ui/Skeleton";
 import { Alert } from "~/components/ui/Alert";
+import { Skeleton } from "~/components/ui/Skeleton";
 
 export default function CustomersPage(): ReactElement {
   const {
@@ -993,36 +1114,28 @@ export default function CustomersPage(): ReactElement {
   } = trpc.getCustomers.useQuery();
 
   if (isLoading) {
-    return (
-      <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-        <Skeleton className="h-10 w-full" />
-      </PageLayout>
-    );
+    return <Skeleton className="h-10 w-full" />;
   }
 
-  return (
-    <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-      {error ? (
-        <Alert variant="destructive">{error.message}</Alert>
-      ) : (
-        <div>{customers.length} customer(s)</div>
-      )}
-    </PageLayout>
-  );
+  if (error) {
+    return <Alert variant="destructive">{error.message}</Alert>;
+  }
+
+  return <div>{customers.length} customer(s)</div>;
 }
 ```
 
 **Query rules:**
 
-- Always provide a meaningful loading state (skeleton/spinner)
-- Always surface user-friendly error feedback in UI
-- Never fetch directly from route components with raw `fetch` when tRPC endpoint exists
+- Always render a loading state
+- Always render user-facing error feedback
+- Keep query logic in route/module UI code, not in `routes.ts`
 
 ---
 
 ### Mutations (Form Submission)
 
-All write operations should use `trpc.*.useMutation()`.
+Use `trpc.*.useMutation()` for route-level writes:
 
 ```typescript
 import type { FormEvent, ReactElement } from "react";
@@ -1057,7 +1170,6 @@ export default function NewCustomerPage(): ReactElement {
       {createCustomer.error && (
         <Alert variant="destructive">{createCustomer.error.message}</Alert>
       )}
-
       <Button type="submit" loading={createCustomer.isPending}>
         {createCustomer.isPending ? "Creating..." : "Create Customer"}
       </Button>
@@ -1068,58 +1180,32 @@ export default function NewCustomerPage(): ReactElement {
 
 **Mutation rules:**
 
-- Disable/mark pending controls while mutation is pending
-- Invalidate relevant queries on success
-- Keep error state visible and recoverable
+- Show pending state on submit controls
+- Invalidate related queries on success
+- Keep error feedback visible and recoverable
 
 ---
 
-### Pending UI Patterns
+### Pending + Optimistic UI
 
-Use pending state at three levels:
+Use query/mutation/navigation state together:
 
-1. **Query-level**: `isLoading` for page/section skeletons
-2. **Mutation-level**: `isPending` for submit buttons and inline states
-3. **Navigation-level**: `useNavigation()` for route transition indicators
+1. Query-level loading: `query.isLoading`
+2. Mutation-level pending: `mutation.isPending`
+3. Navigation transition: `useNavigation().state`
+
+Optimistic rendering pattern (route-local):
 
 ```typescript
-import { useNavigation } from "react-router";
+const updateTask = trpc.updateTask.useMutation();
 
-function LayoutShell(): ReactElement {
-  const navigation = useNavigation();
-  const isNavigating = navigation.state !== "idle";
-
-  return (
-    <div>
-      {isNavigating && <div className="h-1 w-full animate-pulse bg-primary" />}
-      {/* layout content */}
-    </div>
-  );
+let isComplete = task.status === "complete";
+if (updateTask.isPending && updateTask.variables?.id === task.id) {
+  isComplete = updateTask.variables.status === "complete";
 }
 ```
 
----
-
-### Optimistic UI Patterns
-
-Prefer optimistic updates for UX-critical mutations.
-
-#### Option A: Local optimistic rendering
-
-Use pending form values/mutation variables to reflect expected UI immediately.
-
-```typescript
-const mutation = trpc.updateCustomerStatus.useMutation();
-
-const optimisticStatus =
-  mutation.isPending && mutation.variables?.id === customer.id
-    ? mutation.variables.status
-    : customer.status;
-```
-
-#### Option B: React Query cache updates
-
-Use `onMutate`/`onError`/`onSettled` for robust list-level optimistic updates.
+Robust list-level optimistic update with rollback:
 
 ```typescript
 const utils = trpc.useUtils();
@@ -1148,16 +1234,7 @@ const deleteCustomer = trpc.deleteCustomer.useMutation({
 
 ---
 
-### Error Handling
-
-Handle errors at both data and route boundaries.
-
-#### Data-level errors (preferred for recoverable failures)
-
-- Query/mutation errors should render inline/page `Alert` or `ErrorDisplay`
-- Keep the user in context with retry options
-
-#### Route-level errors (unexpected failures)
+### Error Boundary Pattern
 
 ```typescript
 import type { ReactElement } from "react";
@@ -1177,124 +1254,15 @@ export function ErrorBoundary(): ReactElement {
 
 ---
 
-### Server Boundary Rules
+### Routing Do/Don't
 
-All backend behavior must stay in `server/`:
-
-- `server/index.ts`: Hono HTTP wiring (CORS, static assets, `/trpc/*`, fallback)
-- `server/trpc/router.ts`: API procedure definitions
-- `server/services/erp.ts`: business logic
-- `server/contracts/*.ts`: runtime validation + inferred types
-- `server/db/index.ts`: database client initialization
-- `server/db/queries/*.ts`: database reads/writes
-
-Never import `server/db/*` or `server/services/*` directly from `app/` route modules.
-
----
-
-### Essential Hooks Reference
-
-```typescript
-// tRPC + React Query (primary data APIs)
-trpc.getCustomers.useQuery();
-trpc.getCustomerById.useQuery({ id });
-trpc.createCustomer.useMutation();
-trpc.updateCustomer.useMutation();
-trpc.deleteCustomer.useMutation();
-trpc.useUtils(); // invalidate/setData/cancel helpers
-
-// React Router hooks (routing/navigation concerns)
-useNavigate();
-useNavigation();
-useParams();
-useSearchParams();
-useLocation();
-
-// Root/route error handling hooks
-useRouteError();
-isRouteErrorResponse(error);
-```
-
----
-
-### Common Route Pattern (Current Project Style)
-
-```typescript
-import type { ReactElement } from "react";
-import { useNavigate, useParams } from "react-router";
-import { trpc } from "~/lib/trpc";
-import { Button } from "~/components/ui/Button";
-import { Alert } from "~/components/ui/Alert";
-import { Skeleton } from "~/components/ui/Skeleton";
-
-export default function CustomerDetailPage(): ReactElement {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const utils = trpc.useUtils();
-
-  const customerId = Number(id);
-
-  const customerQuery = trpc.getCustomerById.useQuery({ id: customerId }, {
-    enabled: Number.isFinite(customerId),
-  });
-
-  const deleteMutation = trpc.deleteCustomer.useMutation({
-    onSuccess: async () => {
-      await utils.getCustomers.invalidate();
-      void navigate("/");
-    },
-  });
-
-  if (customerQuery.isLoading) {
-    return <Skeleton className="h-32 w-full" />;
-  }
-
-  if (customerQuery.error) {
-    return <Alert variant="destructive">{customerQuery.error.message}</Alert>;
-  }
-
-  const customer = customerQuery.data;
-  if (!customer) {
-    return <Alert variant="destructive">Customer not found</Alert>;
-  }
-
-  return (
-    <div className="space-y-4">
-      <h1>{customer.company_name}</h1>
-
-      <Button
-        variant="destructive"
-        loading={deleteMutation.isPending}
-        onClick={() => deleteMutation.mutate({ id: customer.id })}
-      >
-        {deleteMutation.isPending ? "Deleting..." : "Delete"}
-      </Button>
-
-      {deleteMutation.error && (
-        <Alert variant="destructive">{deleteMutation.error.message}</Alert>
-      )}
-    </div>
-  );
-}
-```
-
----
-
-### Migration Notes (Old vs Current Pattern)
-
-**Old pattern (no longer default in this project):**
-
-- Route `loader`/`action` driven data/mutations
-- SSR-first route data flow
-
-**Current pattern (required):**
-
-- SPA route components + tRPC query/mutation hooks
-- Hono server provides API boundary and static hosting
-- Build output includes `build/client` (SPA assets) and `build/server` (compiled Hono server)
+- Do use `layout`, `index`, and `route` helpers in `app/routes.ts`
+- Do keep navigation logic in route/layout modules with Router hooks
+- Do keep route modules focused on rendering, navigation, and `trpc` hook orchestration
+- Don't introduce route tree entries outside `app/routes.ts`
+- Don't import server-only modules into client route/layout files
 
 **Config requirements to keep:**
 
-- `react-router.config.ts` uses `ssr: false`
 - `react-router.config.ts` enables `future.v8_viteEnvironmentApi: true`
 - `vite.config.ts` uses Vite 8-compatible settings
