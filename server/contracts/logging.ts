@@ -19,7 +19,7 @@ const BaseLogEntrySchema = z.object({
   message: z.string().trim().min(1),
   timestamp: z.string().datetime({ offset: true }).optional(),
   page_url: z.string().optional(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

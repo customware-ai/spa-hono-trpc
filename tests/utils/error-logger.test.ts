@@ -68,9 +68,11 @@ describe("Frontend error logger utility", () => {
       fetchImpl: fetchMock,
     });
 
+    const rejectionReason = new Error("promise failed");
     window.dispatchEvent(
       new PromiseRejectionEvent("unhandledrejection", {
-        reason: new Error("promise failed"),
+        promise: Promise.resolve(rejectionReason),
+        reason: rejectionReason,
       }),
     );
 

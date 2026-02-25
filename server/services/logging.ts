@@ -129,7 +129,7 @@ function persistLine(
 function persistLogEntry(
   entry: Omit<LogEntry, "timestamp"> & { timestamp?: string },
 ): Result<void, LogPersistError> {
-  const normalized: LogEntry = {
+  const normalized: Omit<LogEntry, "timestamp"> & { timestamp: string } = {
     ...entry,
     timestamp: normalizeTimestamp(entry.timestamp),
     context: normalizeContext(entry.context),

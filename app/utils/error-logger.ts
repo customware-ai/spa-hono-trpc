@@ -41,12 +41,16 @@ function normalizeErrorContext(
   event: ErrorEvent,
   eventType: ErrorContext["eventType"],
 ): ErrorContext {
+  const eventTarget = event.target;
+  const targetNodeName =
+    eventTarget instanceof Element ? eventTarget.nodeName : undefined;
+
   return {
     eventType,
     filename: event.filename,
     line: event.lineno,
     column: event.colno,
-    target: event.target ? event.target.nodeName : undefined,
+    target: targetNodeName,
     stack: event.error?.stack,
   };
 }
@@ -79,13 +83,13 @@ function buildLogPayload(
     message,
     timestamp: new Date().toISOString(),
     page_url: window.location.href,
-    context: context as Record<string, unknown>,
+    context: context as unknown as Record<string, unknown>,
   };
 }
 
 function formatContextMessage(
   message: string,
-  context: ErrorContext,
+  context: unknown,
 ): string {
   return `${message} ${JSON.stringify(context)}`;
 }
@@ -163,15 +167,27 @@ export function attachGlobalFrontendErrorHandlers(
 
   attachCount += 1;
   if (windowErrorHandler !== null && documentErrorHandler !== null) {
+    const trackedWindowHandler = windowErrorHandler;
+    const trackedDocumentHandler = documentErrorHandler;
+
     return () => {
       attachCount -= 1;
       if (attachCount > 0) {
         return;
       }
 
-      window.removeEventListener("error", windowErrorHandler);
-      document.removeEventListener("error", documentErrorHandler, true);
-      window.removeEventListener("unhandledrejection", rejectionHandler);
+      if (trackedWindowHandler !== null) {
+        window.removeEventListener("error", trackedWindowHandler);
+      }
+
+      if (trackedDocumentHandler !== null) {
+        document.removeEventListener("error", trackedDocumentHandler, true);
+      }
+
+      if (rejectionHandler !== null) {
+        window.removeEventListener("unhandledrejection", rejectionHandler);
+      }
+
       windowErrorHandler = null;
       documentErrorHandler = null;
       rejectionHandler = null;
@@ -179,10 +195,6 @@ export function attachGlobalFrontendErrorHandlers(
   }
 
   windowErrorHandler = (event: ErrorEvent): void => {
-    if (event.target !== window) {
-      return;
-    }
-
     const context = normalizeErrorContext(event, "window-error");
     const message =
       event.message || `Window error: ${context.filename ?? "unknown source"}`;
@@ -222,9 +234,15 @@ export function attachGlobalFrontendErrorHandlers(
     );
   };
 
-  window.addEventListener("error", windowErrorHandler);
-  document.addEventListener("error", documentErrorHandler, true);
-  window.addEventListener("unhandledrejection", rejectionHandler);
+  if (
+    windowErrorHandler !== null &&
+    documentErrorHandler !== null &&
+    rejectionHandler !== null
+  ) {
+    window.addEventListener("error", windowErrorHandler);
+    document.addEventListener("error", documentErrorHandler, true);
+    window.addEventListener("unhandledrejection", rejectionHandler);
+  }
 
   return () => {
     attachCount -= 1;
@@ -232,9 +250,17 @@ export function attachGlobalFrontendErrorHandlers(
       return;
     }
 
-    window.removeEventListener("error", windowErrorHandler);
-    document.removeEventListener("error", documentErrorHandler, true);
-    window.removeEventListener("unhandledrejection", rejectionHandler);
+    if (windowErrorHandler !== null) {
+      window.removeEventListener("error", windowErrorHandler);
+    }
+
+    if (documentErrorHandler !== null) {
+      document.removeEventListener("error", documentErrorHandler, true);
+    }
+
+    if (rejectionHandler !== null) {
+      window.removeEventListener("unhandledrejection", rejectionHandler);
+    }
     windowErrorHandler = null;
     documentErrorHandler = null;
     rejectionHandler = null;
