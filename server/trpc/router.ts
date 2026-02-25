@@ -25,7 +25,7 @@ import {
 import {
   CreateCustomerSchema,
   UpdateCustomerSchema,
-} from "../schemas/sales.js";
+} from "../contracts/sales.js";
 
 /**
  * Main application router with all API procedures

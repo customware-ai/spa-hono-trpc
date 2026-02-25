@@ -1,242 +1,139 @@
 /**
- * Tests for Database Layer
- *
- * Tests the core database functionality including table creation,
- * CRUD operations, and data persistence using sql.js.
+ * Tests for low-level SQLite behavior using better-sqlite3.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js';
+import path from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import BetterSqlite3, { type Database } from "better-sqlite3";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-// Create a test-specific database module
-let testDb: Database | null = null;
-let testSQL: SqlJsStatic | null = null;
+let testDb: Database;
 
-async function getTestDatabase(): Promise<{ db: Database; SQL: SqlJsStatic }> {
-  if (!testSQL) {
-    testSQL = await initSqlJs();
-  }
-  if (!testDb) {
-    testDb = new testSQL.Database();
-    // Initialize a simple test table
-    testDb.run(`
-      CREATE TABLE IF NOT EXISTS test_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        value INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-  }
-  return { db: testDb, SQL: testSQL };
+/**
+ * Creates a deterministic test table for each test case.
+ */
+function initializeSchema(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS test_data (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      value INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 }
 
-function resetTestDatabase(): void {
-  if (testDb) {
-    testDb.run('DELETE FROM test_data');
-    testDb.run("DELETE FROM sqlite_sequence WHERE name='test_data'");
-  }
+/**
+ * Clears rows so each test has isolated state.
+ */
+function resetTable(db: Database): void {
+  db.exec("DELETE FROM test_data;");
+  db.exec("DELETE FROM sqlite_sequence WHERE name = 'test_data';");
 }
 
-describe('Database Operations', () => {
-  beforeEach(async () => {
-    await getTestDatabase();
-    resetTestDatabase();
+describe("Database Operations", () => {
+  beforeEach(() => {
+    testDb = new BetterSqlite3(":memory:");
+    initializeSchema(testDb);
+    resetTable(testDb);
   });
 
   afterEach(() => {
-    resetTestDatabase();
+    testDb.close();
   });
 
-  describe('Basic CRUD Operations', () => {
-    it('should create a record', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Test Item', 42]);
-      const result = db.exec("SELECT * FROM test_data WHERE name = 'Test Item'");
+  it("creates and reads a record", () => {
+    const insert = testDb.prepare(
+      "INSERT INTO test_data (name, value) VALUES (?, ?)",
+    );
+    insert.run("Test Item", 42);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('Test Item');
-      expect(result[0].values[0][2]).toBe(42);
-    });
+    const row = testDb
+      .prepare("SELECT id, name, value FROM test_data WHERE name = ?")
+      .get("Test Item") as { id: number; name: string; value: number };
 
-    it('should read all records', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Item 1', 10]);
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Item 2', 20]);
-
-      const result = db.exec("SELECT * FROM test_data ORDER BY id");
-
-      expect(result[0].values).toHaveLength(2);
-    });
-
-    it('should read a single record by id', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Single Item', 100]);
-
-      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
-
-      expect(result[0].values[0][1]).toBe('Single Item');
-      expect(result[0].values[0][2]).toBe(100);
-    });
-
-    it('should update a record', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Old Name', 50]);
-      db.run("UPDATE test_data SET name = ?, value = ? WHERE id = ?", ['New Name', 60, 1]);
-
-      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
-
-      expect(result[0].values[0][1]).toBe('New Name');
-      expect(result[0].values[0][2]).toBe(60);
-    });
-
-    it('should delete a record', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['To Delete', 99]);
-      db.run("DELETE FROM test_data WHERE id = 1");
-
-      const result = db.exec("SELECT * FROM test_data WHERE id = 1");
-
-      expect(result).toHaveLength(0);
-    });
+    expect(row.id).toBe(1);
+    expect(row.name).toBe("Test Item");
+    expect(row.value).toBe(42);
   });
 
-  describe('Query Results', () => {
-    it('should return empty array when no records exist', async () => {
-      const { db } = await getTestDatabase();
-      const result = db.exec("SELECT * FROM test_data");
+  it("updates a record", () => {
+    testDb.prepare("INSERT INTO test_data (name, value) VALUES (?, ?)").run(
+      "Old",
+      10,
+    );
 
-      expect(result).toHaveLength(0);
-    });
+    testDb
+      .prepare("UPDATE test_data SET name = ?, value = ? WHERE id = ?")
+      .run("New", 20, 1);
 
-    it('should return null for non-existent record', async () => {
-      const { db } = await getTestDatabase();
-      const result = db.exec("SELECT * FROM test_data WHERE id = 999");
+    const row = testDb
+      .prepare("SELECT name, value FROM test_data WHERE id = ?")
+      .get(1) as { name: string; value: number };
 
-      expect(result).toHaveLength(0);
-    });
-
-    it('should filter records by condition', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['High Value', 100]);
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Low Value', 10]);
-
-      const result = db.exec("SELECT * FROM test_data WHERE value > 50");
-
-      expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('High Value');
-    });
+    expect(row.name).toBe("New");
+    expect(row.value).toBe(20);
   });
 
-  describe('Database Export', () => {
-    it('should export database as Uint8Array', async () => {
-      const { db } = await getTestDatabase();
-      const exported = db.export();
+  it("deletes a record", () => {
+    testDb.prepare("INSERT INTO test_data (name, value) VALUES (?, ?)").run(
+      "Delete Me",
+      10,
+    );
 
-      expect(exported).toBeInstanceOf(Uint8Array);
-      expect(exported.length).toBeGreaterThan(0);
-    });
+    testDb.prepare("DELETE FROM test_data WHERE id = ?").run(1);
 
-    it('should export and import database data', async () => {
-      const { db, SQL } = await getTestDatabase();
+    const row = testDb
+      .prepare("SELECT id FROM test_data WHERE id = ?")
+      .get(1) as { id: number } | undefined;
 
-      // Add data
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Export Test', 123]);
-
-      // Export
-      const exported = db.export();
-
-      // Create new database from exported data
-      const importedDb = new SQL.Database(exported);
-      const result = importedDb.exec("SELECT * FROM test_data WHERE name = 'Export Test'");
-
-      expect(result[0].values[0][1]).toBe('Export Test');
-      expect(result[0].values[0][2]).toBe(123);
-
-      importedDb.close();
-    });
+    expect(row).toBeUndefined();
   });
 
-  describe('Parameterized Queries', () => {
-    it('should handle parameterized inserts', async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Param Test', 456]);
-
-      const result = db.exec("SELECT * FROM test_data WHERE name = 'Param Test'");
-
-      expect(result[0].values[0][2]).toBe(456);
+  it("supports transaction rollback", () => {
+    const transaction = testDb.transaction(() => {
+      testDb
+        .prepare("INSERT INTO test_data (name, value) VALUES (?, ?)")
+        .run("Before Rollback", 1);
+      throw new Error("force rollback");
     });
 
-    it('should prevent SQL injection via parameters', async () => {
-      const { db } = await getTestDatabase();
-      const maliciousInput = "'; DROP TABLE test_data; --";
+    expect(() => transaction()).toThrow("force rollback");
 
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", [maliciousInput, 1]);
+    const count = testDb
+      .prepare("SELECT COUNT(*) as count FROM test_data")
+      .get() as { count: number };
 
-      // Table should still exist and contain the literal string
-      const result = db.exec("SELECT * FROM test_data");
-      expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe(maliciousInput);
-    });
+    expect(count.count).toBe(0);
   });
 
-  describe('Transaction Support', () => {
-    it('should support manual transactions', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run("BEGIN TRANSACTION");
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item 1', 10]);
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item 2', 20]);
-      db.run("COMMIT");
-
-      const result = db.exec("SELECT * FROM test_data");
-
-      expect(result[0].values).toHaveLength(2);
-    });
-
-    it('should rollback failed transactions', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run("BEGIN TRANSACTION");
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['TX Item', 10]);
-      db.run("ROLLBACK");
-
-      const result = db.exec("SELECT * FROM test_data");
-
-      expect(result).toHaveLength(0);
-    });
+  it("enforces NOT NULL constraints", () => {
+    expect(() => {
+      testDb.prepare("INSERT INTO test_data (value) VALUES (?)").run(1);
+    }).toThrow();
   });
 
-  describe('Schema Validation', () => {
-    it('should enforce NOT NULL constraint', async () => {
-      const { db } = await getTestDatabase();
+  it("persists data to a file-backed sqlite database", () => {
+    const tempDirectory = mkdtempSync(path.join(tmpdir(), "better-sqlite3-test-"));
+    const dbPath = path.join(tempDirectory, "test.db");
 
-      expect(() => {
-        db.run("INSERT INTO test_data (value) VALUES (?)", [100]);
-      }).toThrow();
-    });
+    const fileDb = new BetterSqlite3(dbPath);
+    initializeSchema(fileDb);
+    fileDb
+      .prepare("INSERT INTO test_data (name, value) VALUES (?, ?)")
+      .run("Persisted", 7);
+    fileDb.close();
 
-    it('should auto-increment primary key', async () => {
-      const { db } = await getTestDatabase();
+    const reopenedDb = new BetterSqlite3(dbPath);
+    const row = reopenedDb
+      .prepare("SELECT name, value FROM test_data WHERE name = ?")
+      .get("Persisted") as { name: string; value: number };
 
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['First', 1]);
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Second', 2]);
+    expect(row.name).toBe("Persisted");
+    expect(row.value).toBe(7);
 
-      const result = db.exec("SELECT id FROM test_data ORDER BY id");
-
-      expect(result[0].values[0][0]).toBe(1);
-      expect(result[0].values[1][0]).toBe(2);
-    });
-
-    it('should set default timestamp', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run("INSERT INTO test_data (name, value) VALUES (?, ?)", ['Timestamp Test', 1]);
-
-      const result = db.exec("SELECT created_at FROM test_data WHERE id = 1");
-
-      expect(result[0].values[0][0]).toBeTruthy(); // Should have a timestamp
-    });
+    reopenedDb.close();
+    rmSync(tempDirectory, { recursive: true, force: true });
   });
 });

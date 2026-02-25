@@ -1,218 +1,155 @@
 /**
- * Tests for ERP Service Layer
- *
- * Tests business logic and CRUD operations for ERP entities.
+ * Integration tests for ERP customer service functions backed by Drizzle ORM.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js';
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { getDatabase } from "../../server/db/index.js";
+import { customers } from "../../server/db/schemas.js";
+import { runMigrations } from "../../server/db/migrate.js";
+import {
+  createCustomer,
+  deleteCustomer,
+  getCustomerById,
+  getCustomers,
+  updateCustomer,
+} from "../../server/services/erp.js";
 
-// Test database setup
-let testDb: Database | null = null;
-let testSQL: SqlJsStatic | null = null;
+/**
+ * Ensures schema exists before integration tests execute.
+ */
+beforeAll(async () => {
+  await runMigrations();
+});
 
-async function getTestDatabase(): Promise<{ db: Database; SQL: SqlJsStatic }> {
-  if (!testSQL) {
-    testSQL = await initSqlJs();
-  }
-  if (!testDb) {
-    testDb = new testSQL.Database();
+/**
+ * Removes customers before each test to keep deterministic assertions.
+ */
+beforeEach(async () => {
+  const db = getDatabase();
+  await db.delete(customers);
+});
 
-    // Create customers table
-    testDb.run(`
-      CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        company_name TEXT NOT NULL,
-        contact_name TEXT,
-        email TEXT,
-        phone TEXT,
-        website TEXT,
-        billing_address TEXT,
-        shipping_address TEXT,
-        tax_id TEXT,
-        payment_terms INTEGER DEFAULT 30,
-        credit_limit REAL DEFAULT 0,
-        status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive')),
-        notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-  }
-  return { db: testDb, SQL: testSQL };
-}
+describe("ERP Service - Customer Operations", () => {
+  it("creates a customer with required fields", async () => {
+    const result = await createCustomer({
+      company_name: "Acme Corp",
+      email: "info@acme.com",
+    });
 
-function resetTestDatabase(): void {
-  if (testDb) {
-    testDb.run('DELETE FROM customers');
-    testDb.run("DELETE FROM sqlite_sequence WHERE name='customers'");
-  }
-}
+    expect(result.isOk()).toBe(true);
 
-describe('ERP Service - Customer Operations', () => {
-  beforeEach(async () => {
-    await getTestDatabase();
-    resetTestDatabase();
+    if (result.isErr()) {
+      return;
+    }
+
+    expect(result.value.company_name).toBe("Acme Corp");
+    expect(result.value.email).toBe("info@acme.com");
+    expect(result.value.status).toBe("active");
   });
 
-  afterEach(() => {
-    resetTestDatabase();
+  it("returns customers with status and search filters", async () => {
+    await createCustomer({
+      company_name: "Active Customer",
+      email: "active-only@alpha.com",
+      status: "active",
+    });
+    await createCustomer({
+      company_name: "Inactive Customer",
+      email: "inactive-only@beta.com",
+      status: "inactive",
+    });
+
+    const activeOnly = await getCustomers({ status: "active" });
+    const searchOnly = await getCustomers({ search: "active-only@alpha.com" });
+
+    expect(activeOnly.isOk()).toBe(true);
+    expect(searchOnly.isOk()).toBe(true);
+
+    if (activeOnly.isErr() || searchOnly.isErr()) {
+      return;
+    }
+
+    expect(activeOnly.value).toHaveLength(1);
+    expect(activeOnly.value[0].company_name).toBe("Active Customer");
+    expect(searchOnly.value).toHaveLength(1);
   });
 
-  describe('Create Customer', () => {
-    it('should create a customer with required fields', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run(
-        "INSERT INTO customers (company_name, email) VALUES (?, ?)",
-        ['Acme Corp', 'info@acme.com']
-      );
-
-      const result = db.exec("SELECT * FROM customers WHERE company_name = 'Acme Corp'");
-
-      expect(result).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('Acme Corp');
-      expect(result[0].values[0][3]).toBe('info@acme.com');
+  it("updates customer fields", async () => {
+    const created = await createCustomer({
+      company_name: "Before Update",
+      email: "before@example.com",
     });
 
-    it('should create a customer with all fields', async () => {
-      const { db } = await getTestDatabase();
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) {
+      return;
+    }
 
-      db.run(`
-        INSERT INTO customers (
-          company_name, contact_name, email, phone, payment_terms, credit_limit, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, ['Test Corp', 'John Doe', 'john@test.com', '555-1234', 60, 10000, 'active']);
-
-      const result = db.exec("SELECT * FROM customers WHERE company_name = 'Test Corp'");
-
-      expect(result[0].values[0][1]).toBe('Test Corp');
-      expect(result[0].values[0][2]).toBe('John Doe');
-      expect(result[0].values[0][9]).toBe(60); // payment_terms
-      expect(result[0].values[0][10]).toBe(10000); // credit_limit
+    const updated = await updateCustomer(created.value.id, {
+      company_name: "After Update",
+      phone: "555-1234",
     });
 
-    it('should use default values for optional fields', async () => {
-      const { db } = await getTestDatabase();
+    expect(updated.isOk()).toBe(true);
+    if (updated.isErr()) {
+      return;
+    }
 
-      db.run("INSERT INTO customers (company_name) VALUES (?)", ['Default Corp']);
-
-      const result = db.exec("SELECT payment_terms, credit_limit, status FROM customers WHERE company_name = 'Default Corp'");
-
-      expect(result[0].values[0][0]).toBe(30); // default payment_terms
-      expect(result[0].values[0][1]).toBe(0); // default credit_limit
-      expect(result[0].values[0][2]).toBe('active'); // default status
-    });
+    expect(updated.value.company_name).toBe("After Update");
+    expect(updated.value.phone).toBe("555-1234");
   });
 
-  describe('Read Customer', () => {
-    beforeEach(async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO customers (company_name, email, status) VALUES (?, ?, ?)", ['Active Corp', 'active@test.com', 'active']);
-      db.run("INSERT INTO customers (company_name, email, status) VALUES (?, ?, ?)", ['Inactive Corp', 'inactive@test.com', 'inactive']);
+  it("soft-deletes customers by setting status to inactive", async () => {
+    const created = await createCustomer({
+      company_name: "To Delete",
+      email: "delete@example.com",
     });
 
-    it('should get all customers', async () => {
-      const { db } = await getTestDatabase();
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) {
+      return;
+    }
 
-      const result = db.exec("SELECT * FROM customers");
+    const deleted = await deleteCustomer(created.value.id);
+    expect(deleted.isOk()).toBe(true);
 
-      expect(result[0].values).toHaveLength(2);
-    });
+    const fetched = await getCustomerById(created.value.id);
+    expect(fetched.isOk()).toBe(true);
 
-    it('should get a single customer by id', async () => {
-      const { db } = await getTestDatabase();
+    if (fetched.isErr() || !fetched.value) {
+      return;
+    }
 
-      const result = db.exec("SELECT * FROM customers WHERE id = 1");
-
-      expect(result[0].values[0][1]).toBe('Active Corp');
-    });
-
-    it('should filter customers by status', async () => {
-      const { db } = await getTestDatabase();
-
-      const result = db.exec("SELECT * FROM customers WHERE status = 'active'");
-
-      expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('Active Corp');
-    });
-
-    it('should search customers by company name', async () => {
-      const { db } = await getTestDatabase();
-
-      // Use a more specific search term that only matches 'Active Corp' not 'Inactive Corp'
-      const result = db.exec("SELECT * FROM customers WHERE company_name LIKE 'Active%'");
-
-      expect(result[0].values).toHaveLength(1);
-      expect(result[0].values[0][1]).toBe('Active Corp');
-    });
+    expect(fetched.value.status).toBe("inactive");
   });
 
-  describe('Update Customer', () => {
-    beforeEach(async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO customers (company_name, email) VALUES (?, ?)", ['Old Name', 'old@test.com']);
-    });
+  it("returns null for missing customer id", async () => {
+    const result = await getCustomerById(99999);
 
-    it('should update customer fields', async () => {
-      const { db } = await getTestDatabase();
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) {
+      return;
+    }
 
-      db.run(
-        "UPDATE customers SET company_name = ?, email = ? WHERE id = ?",
-        ['New Name', 'new@test.com', 1]
-      );
-
-      const result = db.exec("SELECT * FROM customers WHERE id = 1");
-
-      expect(result[0].values[0][1]).toBe('New Name');
-      expect(result[0].values[0][3]).toBe('new@test.com');
-    });
-
-    it('should update customer status', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run("UPDATE customers SET status = ? WHERE id = ?", ['inactive', 1]);
-
-      const result = db.exec("SELECT status FROM customers WHERE id = 1");
-
-      expect(result[0].values[0][0]).toBe('inactive');
-    });
+    expect(result.value).toBeNull();
   });
 
-  describe('Delete Customer', () => {
-    beforeEach(async () => {
-      const { db } = await getTestDatabase();
-      db.run("INSERT INTO customers (company_name, email) VALUES (?, ?)", ['To Delete', 'delete@test.com']);
+  it("writes rows to the underlying customers table", async () => {
+    const created = await createCustomer({
+      company_name: "Table Assert",
+      email: "table@example.com",
     });
 
-    it('should delete a customer (soft delete by setting inactive)', async () => {
-      const { db } = await getTestDatabase();
+    expect(created.isOk()).toBe(true);
 
-      db.run("UPDATE customers SET status = ? WHERE id = ?", ['inactive', 1]);
+    const db = getDatabase();
+    const rows = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.company_name, "Table Assert"));
 
-      const result = db.exec("SELECT status FROM customers WHERE id = 1");
-
-      expect(result[0].values[0][0]).toBe('inactive');
-    });
-
-    it('should hard delete a customer', async () => {
-      const { db } = await getTestDatabase();
-
-      db.run("DELETE FROM customers WHERE id = 1");
-
-      const result = db.exec("SELECT * FROM customers WHERE id = 1");
-
-      expect(result).toHaveLength(0);
-    });
-  });
-
-  describe('Customer Validation', () => {
-    it('should enforce status check constraint', async () => {
-      const { db } = await getTestDatabase();
-
-      expect(() => {
-        db.run("INSERT INTO customers (company_name, status) VALUES (?, ?)", ['Test', 'invalid']);
-      }).toThrow();
-    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].email).toBe("table@example.com");
   });
 });

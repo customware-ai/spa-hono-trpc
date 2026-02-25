@@ -1,6 +1,6 @@
 /**
  * Node.js Server Startup Script
- * 
+ *
  * This file starts the Hono server using @hono/node-server.
  * It binds to the specified port and handles graceful shutdown.
  */
@@ -10,7 +10,6 @@ import app from "./index.js";
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
-console.log(`🚀 Starting server on http://localhost:${PORT}`);
 console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
 console.log(`🏥 Health check: http://localhost:${PORT}/health`);
 
@@ -24,7 +23,7 @@ serve(
   },
   (info) => {
     console.log(`✅ Server running at http://localhost:${info.port}`);
-  }
+  },
 );
 
 /**

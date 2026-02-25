@@ -1,6 +1,6 @@
 # Template for React Router App with Tailwind CSS and SQLite
 
-**This is a code style and architecture template repository.** Use this as a reference for coding patterns, project structure, and development standards when building production applications. The template demonstrates best practices through an ERP-style application structure built with React Router v7, TypeScript, Tailwind CSS, and sql.js.
+**This is a code style and architecture template repository.** Use this as a reference for coding patterns, project structure, and development standards when building production applications. The template demonstrates best practices through an ERP-style application structure built with React Router v7, TypeScript, Tailwind CSS, and SQLite.
 
 > **⚠️ Important**: This is a **template repository** showcasing code patterns and styles, not a functional application. Use it to understand the coding standards, architectural patterns, and file organization for your own projects.
 
@@ -56,7 +56,7 @@ This template demonstrates:
 
 - **Modern Stack**: React Router v7.13 SPA mode with Hono + tRPC backend, Vite 8, TypeScript strict mode
 - **Type Safety**: Zod v4 schemas + neverthrow Result pattern for error handling
-- **Database Layer**: SQLite via sql.js with proper abstraction and migration system
+- **Database Layer**: SQLite via better-sqlite3 + Drizzle ORM with proper abstraction and migration system
 - **UI Patterns**: Tailwind CSS v4 with professional custom theme and reusable components
 - **Code Quality**: Type-aware linting (oxlint), comprehensive testing setup
 - **Architecture**: Clean client/server separation (`app/` + `server/`) with typed API boundary
@@ -76,7 +76,9 @@ This template demonstrates:
 | neverthrow            | 8.2.0         | Type-safe error handling        |
 | vitest                | 4.0.18        | Testing framework               |
 | oxlint                | 1.47.0        | Type-aware linting              |
-| sql.js                | 1.14.0        | SQLite in JavaScript            |
+| better-sqlite3        | ^12.6.2       | SQLite runtime                  |
+| drizzle-orm           | ^0.45.1       | ORM and query builder           |
+| drizzle-kit           | ^0.31.9       | Migration generation and tooling |
 
 ## 🎨 Design
 
@@ -91,8 +93,9 @@ This template demonstrates:
 # Install dependencies
 npm install
 
-# Run database migrations
-npm run migrate
+# Generate + run database migrations
+npm run db:generate
+npm run db:migrate
 
 # Or build for production
 npm run build
@@ -123,21 +126,23 @@ app/
 └── root.tsx             # Root app shell
 
 server/
-├── db.ts                # Database layer (sql.js + persistence)
+├── contracts/
+│   ├── core.ts          # Core runtime contracts (Zod)
+│   ├── sales.ts         # Sales/customer contracts
+│   └── index.ts         # Contract exports
+├── db/
+│   ├── index.ts         # Database client + connection lifecycle
+│   ├── schemas.ts       # Drizzle table schemas
+│   ├── queries/         # Reusable query modules
+│   ├── migrations/      # SQL migrations + drizzle metadata
+│   └── migrate.ts       # Migration runner
 ├── index.ts             # Hono app setup + static serving + /trpc/*
 ├── start.ts             # Production server entrypoint
-├── db-migrations/
-│   ├── migrate.ts       # Migration engine
-│   ├── run-migrations.ts # Migration runner
-│   └── 001-erp-schema.ts # ERP schema migration
 ├── trpc/
 │   ├── index.ts         # tRPC initialization
 │   └── router.ts        # API procedures
 ├── services/
 │   └── erp.ts           # Business logic
-├── schemas/
-│   ├── index.ts         # Schema exports
-│   └── sales.ts         # Sales/customer schemas
 ├── types/
 │   └── errors.ts        # Error contracts
 ├── utils/
@@ -148,9 +153,9 @@ server/
 
 ## 🗄️ Database Architecture
 
-**Technology**: SQLite via sql.js (in-memory with file persistence to `../sqlite/database.db`)
+**Technology**: SQLite via better-sqlite3 + Drizzle ORM with persistence to `.dbs/database.db`
 
-**Key Pattern**: All database operations go through `server/db.ts` (single source of truth for filesystem access)
+**Key Pattern**: All database operations go through `server/db/` (single source of truth for schema, query, and migration access)
 
 ### Tables Implemented
 
@@ -175,23 +180,23 @@ server/
 
 ### Database Persistence
 
-The database persists to `../sqlite/database.db` (outside the project directory). The `sqlite` directory is created automatically if it doesn't exist.
+The database persists to `.dbs/database.db` inside the repository. The `.dbs` directory is created automatically when needed.
 
 **On startup:**
 
-- If `../sqlite/database.db` exists, it's loaded into memory
-- If not, migrations create a new database with tables
+- If `.dbs/database.db` exists, better-sqlite3 opens it directly
+- If not, running `npm run db:migrate` creates the schema via Drizzle migrations
 
 **On mutations:**
 
-- Every create/update/delete calls `saveDatabase()`
+- better-sqlite3 writes through directly
 - Data survives server restarts
 
 **To reset:**
 
 ```bash
-rm ../sqlite/database.db
-npm run migrate
+rm -rf .dbs/database.db
+npm run db:migrate
 npm run dev
 ```
 
@@ -203,7 +208,9 @@ npm run dev
 | `npm run build:client` | Build client bundle                  |
 | `npm run build:server` | Compile server TypeScript            |
 | `npm run start`        | Start production Hono server         |
-| `npm run migrate`      | Run server database migrations       |
+| `npm run db:generate`  | Generate Drizzle SQL migrations      |
+| `npm run db:migrate`   | Run server database migrations       |
+| `npm run migrate`      | Alias for `npm run db:migrate`       |
 | `npm run typecheck`    | TypeScript type checking             |
 | `npm run lint`         | Type-aware linting with oxlint       |
 | `npm test`             | Run all tests                        |
@@ -234,7 +241,7 @@ The codebase currently centers on the customer module to demonstrate end-to-end 
 
 - **Customers** - List, create, and detail views
 - **Typed API** - tRPC procedures consumed via React Query hooks
-- **Server Data Layer** - Services, schemas, migrations, and sql.js persistence
+- **Server Data Layer** - Services, contracts, db queries, Drizzle migrations, and better-sqlite3 persistence
 
 > **For development guidelines, coding patterns, and architectural rules**, see [AGENTS.md](./AGENTS.md)
 

@@ -6,47 +6,39 @@
  * - Organize service functions by domain
  * - Use Result pattern for error handling
  * - Implement CRUD operations with validation
- * - Structure database queries
- *
- * This is example code from Customware AI - adapt the patterns to your
- * specific business requirements.
+ * - Delegate persistence to db/queries modules
  *
  * @module services/erp
- *
- * Provides CRUD operations for all ERP entities:
- * - Sales & CRM: Customers, Leads, Opportunities, Quotes, Sales Orders, Activities
- *
- * All functions follow these patterns:
- * - Use Result<T, Error> for error handling (neverthrow library)
- * - Validate input with Zod schemas before database operations
- * - Return typed objects, not raw SQL rows
- * - Auto-save database after modifications
- *
- * Database: SQLite via sql.js (in-memory with file persistence)
  */
 
+import { Result, ResultAsync, err, errAsync, okAsync } from "neverthrow";
 import { z } from "zod";
-import { Result, ok, err } from "neverthrow";
-import { getDatabase, saveDatabase } from "../db.js";
-import type { SqlValue } from "sql.js";
-import type { Database } from "../db.js";
-import type { DatabaseError } from "../types/errors.js";
 import {
-  generateDocumentNumber,
-} from "../utils/calculations.js";
+  insertCustomer,
+  selectCustomerById,
+  selectCustomers,
+  softDeleteCustomerById,
+  updateCustomerById,
+} from "../db/queries/customers.js";
+import { selectLatestDocumentNumber } from "../db/queries/documents.js";
 import {
   CustomerSchema,
-} from "../schemas/sales.js";
+} from "../contracts/sales.js";
 import type {
-  Customer,
   CreateCustomer,
+  Customer,
   UpdateCustomer,
-} from "../schemas/sales.js";
+} from "../contracts/sales.js";
+import type { DatabaseError } from "../types/errors.js";
+import { generateDocumentNumber } from "../utils/calculations.js";
 
 /**
- * Creates a typed DatabaseError object
+ * Creates a typed DatabaseError object.
  */
-function createDatabaseError(message: string, originalError?: unknown): DatabaseError {
+function createDatabaseError(
+  message: string,
+  originalError?: unknown,
+): DatabaseError {
   return {
     type: "DATABASE_ERROR",
     message,
@@ -54,331 +46,179 @@ function createDatabaseError(message: string, originalError?: unknown): Database
   };
 }
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-
 /**
- * Executes a SQL query and returns the first row as an object.
- *
- * @param db - Database instance
- * @param sql - SQL query string
- * @param params - Query parameters (optional)
- * @returns First row as object, or null if no results
+ * Validates an array of customer rows and converts parsing failures to DatabaseError.
  */
-function queryOne(db: Database, sql: string, params?: SqlValue[]): Record<string, unknown> | null {
-  const stmt = db.prepare(sql);
-  if (params && params.length > 0) {
-    stmt.bind(params);
-  }
+function parseCustomers(
+  rows: unknown,
+): ResultAsync<Customer[], DatabaseError> {
+  const run = ResultAsync.fromThrowable(async () => {
+    const validation = z.array(CustomerSchema).safeParse(rows);
+    if (!validation.success) {
+      throw new Error(validation.error.message);
+    }
 
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
-    stmt.free();
-    return row as Record<string, unknown>;
-  }
+    return validation.data;
+  }, (error: unknown) => createDatabaseError("Data validation failed", error));
 
-  stmt.free();
-  return null;
+  return run();
 }
 
 /**
- * Executes a SQL query and returns all rows as objects.
- *
- * @param db - Database instance
- * @param sql - SQL query string
- * @param params - Query parameters (optional)
- * @returns Array of row objects
+ * Validates one customer row and converts parsing failures to DatabaseError.
  */
-function queryAll(db: Database, sql: string, params?: SqlValue[]): Record<string, unknown>[] {
-  const stmt = db.prepare(sql);
-  if (params && params.length > 0) {
-    stmt.bind(params);
-  }
+function parseCustomer(
+  row: unknown,
+): ResultAsync<Customer, DatabaseError> {
+  const run = ResultAsync.fromThrowable(async () => {
+    const validation = CustomerSchema.safeParse(row);
+    if (!validation.success) {
+      throw new Error(validation.error.message);
+    }
 
-  const results: Record<string, unknown>[] = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject() as Record<string, unknown>);
-  }
+    return validation.data;
+  }, (error: unknown) => createDatabaseError("Data validation failed", error));
 
-  stmt.free();
-  return results;
+  return run();
 }
 
 /**
- * Executes an INSERT/UPDATE/DELETE query.
- *
- * @param db - Database instance
- * @param sql - SQL query string
- * @param params - Query parameters (optional)
- * @returns Number of affected rows
- */
-function execute(db: Database, sql: string, params?: SqlValue[]): number {
-  const stmt = db.prepare(sql);
-  if (params && params.length > 0) {
-    stmt.bind(params);
-  }
-
-  stmt.step();
-  const changes = db.getRowsModified();
-  stmt.free();
-  return changes;
-}
-
-// ============================================================
-// CUSTOMER CRUD OPERATIONS
-// ============================================================
-
-/**
- * Retrieves all customers from the database.
- *
- * @param filters - Optional filters (status, search query)
- * @returns Result containing array of customers
- *
- * @example
- * const result = await getCustomers({ status: 'active' });
- * if (result.isOk()) {
- *   const customers = result.value;
- * }
+ * Retrieves all customers from the database using optional filters.
  */
 export async function getCustomers(filters?: {
   status?: "active" | "inactive";
   search?: string;
 }): Promise<Result<Customer[], DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
-
-    let sql = "SELECT * FROM customers WHERE 1=1";
-    const params: SqlValue[] = [];
-
-    // Apply status filter
-    if (filters?.status) {
-      sql += " AND status = ?";
-      params.push(filters.status);
-    }
-
-    // Apply search filter (searches company name and email)
-    if (filters?.search) {
-      sql += " AND (company_name LIKE ? OR email LIKE ?)";
-      const searchParam = `%${filters.search}%`;
-      params.push(searchParam, searchParam);
-    }
-
-    sql += " ORDER BY company_name ASC";
-
-    const rows = queryAll(db, sql, params.length > 0 ? params : undefined);
-
-    // Validate returned data with Zod schema
-    const validation = z.array(CustomerSchema).safeParse(rows);
-    if (!validation.success) {
-      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
-    }
-
-    return ok(validation.data);
-  } catch (error) {
-    return err(createDatabaseError("Failed to fetch customers", error));
-  }
+  return await selectCustomers(filters).andThen((rows) => parseCustomers(rows));
 }
 
 /**
- * Retrieves a single customer by ID.
- *
- * @param id - Customer ID
- * @returns Result containing customer or null if not found
+ * Retrieves a single customer by id.
  */
-export async function getCustomerById(id: number): Promise<Result<Customer | null, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
-    const row = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-
-    if (!row) {
-      return ok(null);
-    }
-
-    // Validate returned data with Zod schema
-    const validation = CustomerSchema.safeParse(row);
-    if (!validation.success) {
-      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
-    }
-
-    return ok(validation.data);
-  } catch (error) {
-    return err(createDatabaseError("Failed to fetch customer", error));
-  }
+export async function getCustomerById(
+  id: number,
+): Promise<Result<Customer | null, DatabaseError>> {
+  return await selectCustomerById(id).andThen((row) =>
+    row ? parseCustomer(row) : okAsync(null),
+  );
 }
 
 /**
- * Creates a new customer record.
- *
- * @param data - Customer data (validated with CreateCustomerSchema)
- * @returns Result containing the created customer with ID
- *
- * @example
- * const result = await createCustomer({
- *   company_name: "Sample Company",
- *   email: "contact@sample-company.com",
- *   payment_terms: 30
- * });
+ * Creates a new customer record and returns the created row.
  */
-export async function createCustomer(data: CreateCustomer): Promise<Result<Customer, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
-
-    const sql = `
-      INSERT INTO customers (company_name, email, phone, status, notes)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-
-    const params = [
-      data.company_name,
-      data.email || null,
-      data.phone || null,
-      data.status || "active",
-      data.notes || null,
-    ];
-
-    execute(db, sql, params);
-    await saveDatabase();
-
-    // Query the just-inserted customer by company_name (most recently created)
-    const customer = queryOne(
-      db,
-      "SELECT * FROM customers WHERE company_name = ? ORDER BY id DESC LIMIT 1",
-      [data.company_name]
-    );
-
-    if (!customer) {
-      return err(createDatabaseError("Failed to retrieve created customer"));
-    }
-
-    const validation = CustomerSchema.safeParse(customer);
-    if (!validation.success) {
-      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
-    }
-
-    return ok(validation.data);
-  } catch (error) {
-    return err(createDatabaseError("Failed to create customer", error));
-  }
+export async function createCustomer(
+  data: CreateCustomer,
+): Promise<Result<Customer, DatabaseError>> {
+  return await insertCustomer(data).andThen((row) =>
+    row
+      ? parseCustomer(row)
+      : errAsync(createDatabaseError("Failed to retrieve created customer")),
+  );
 }
 
 /**
- * Updates an existing customer.
- *
- * @param id - Customer ID
- * @param data - Partial customer data to update
- * @returns Result containing the updated customer
+ * Updates a customer record by id and returns the updated row.
  */
 export async function updateCustomer(
   id: number,
-  data: UpdateCustomer
+  data: UpdateCustomer,
 ): Promise<Result<Customer, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
+  const updateData: {
+    company_name?: string;
+    email?: string | null;
+    phone?: string | null;
+    status?: "active" | "inactive";
+    notes?: string | null;
+  } = {};
 
-    // Build dynamic UPDATE query based on provided fields
-    const updates: string[] = [];
-    const params: SqlValue[] = [];
-
-    Object.entries(data).forEach(([key, value]) => {
-      updates.push(`${key} = ?`);
-      params.push(value as SqlValue);
-    });
-
-    if (updates.length === 0) {
-      // No updates provided, just return existing customer
-      const customer = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-      if (!customer) {
-        return err(createDatabaseError("Customer not found"));
-      }
-      const validation = CustomerSchema.safeParse(customer);
-      if (!validation.success) {
-        return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
-      }
-      return ok(validation.data);
-    }
-
-    params.push(id);
-    const sql = `UPDATE customers SET ${updates.join(", ")} WHERE id = ?`;
-
-    execute(db, sql, params);
-    await saveDatabase();
-
-    const customer = queryOne(db, "SELECT * FROM customers WHERE id = ?", [id]);
-    if (!customer) {
-      return err(createDatabaseError("Failed to retrieve updated customer"));
-    }
-
-    // Validate returned data with Zod schema
-    const validation = CustomerSchema.safeParse(customer);
-    if (!validation.success) {
-      return err(createDatabaseError(`Data validation failed: ${validation.error.message}`));
-    }
-
-    return ok(validation.data);
-  } catch (error) {
-    return err(createDatabaseError("Failed to update customer", error));
+  if (data.company_name !== undefined) {
+    updateData.company_name = data.company_name;
   }
+
+  if (data.email !== undefined) {
+    updateData.email = data.email;
+  }
+
+  if (data.phone !== undefined) {
+    updateData.phone = data.phone;
+  }
+
+  if (data.status !== undefined) {
+    updateData.status = data.status;
+  }
+
+  if (data.notes !== undefined) {
+    updateData.notes = data.notes;
+  }
+
+  return await updateCustomerById(id, updateData).andThen((row) =>
+    row ? parseCustomer(row) : errAsync(createDatabaseError("Customer not found")),
+  );
 }
 
 /**
- * Deletes a customer (soft delete by setting status to inactive).
- *
- * @param id - Customer ID
- * @returns Result indicating success
+ * Soft-deletes a customer by setting status to inactive.
  */
-export async function deleteCustomer(id: number): Promise<Result<void, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
-    execute(db, "UPDATE customers SET status = 'inactive' WHERE id = ?", [id]);
-    await saveDatabase();
-    return ok(undefined);
-  } catch (error) {
-    return err(createDatabaseError("Failed to delete customer", error));
-  }
+export async function deleteCustomer(
+  id: number,
+): Promise<Result<void, DatabaseError>> {
+  return await softDeleteCustomerById(id).map(() => undefined);
 }
 
-// ============================================================
-// DOCUMENT NUMBER GENERATION
-// ============================================================
-
 /**
- * Generates the next available document number for a given type.
- *
- * @param prefix - Document prefix (INV, QT, SO, PAY, JE)
- * @param tableName - Table to query for last number
- * @param columnName - Column containing document numbers
- * @returns The next document number
- *
- * @example
- * await getNextDocumentNumber("INV", "invoices", "invoice_number")
- * // Returns "INV-000001" if no invoices exist
- * // Returns "INV-000124" if last invoice was "INV-000123"
+ * Generates the next available document number by inspecting the target table.
  */
 export async function getNextDocumentNumber(
   prefix: string,
   tableName: string,
-  columnName: string
+  columnName: string,
 ): Promise<Result<string, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
-
-    const sql = `SELECT ${columnName} FROM ${tableName} ORDER BY id DESC LIMIT 1`;
-    const row = queryOne(db, sql, []);
-
-    const lastNumber = row ? (row[columnName] as string | null) : null;
-    const nextNumber = generateDocumentNumber(prefix, lastNumber);
-
-    return ok(nextNumber);
-  } catch (error) {
-    return err(createDatabaseError("Failed to generate document number", error));
+  if (
+    tableName === "quotes" &&
+    columnName === "quote_number"
+  ) {
+    return await selectLatestDocumentNumber({
+      tableName: "quotes",
+      columnName: "quote_number",
+    }).map((lastNumber) => generateDocumentNumber(prefix, lastNumber));
   }
+
+  if (
+    tableName === "sales_orders" &&
+    columnName === "order_number"
+  ) {
+    return await selectLatestDocumentNumber({
+      tableName: "sales_orders",
+      columnName: "order_number",
+    }).map((lastNumber) => generateDocumentNumber(prefix, lastNumber));
+  }
+
+  return err(createDatabaseError("Invalid table or column name"));
 }
 
-// Demo data functions
-export async function getDemoLeads(): Promise<Array<{ id: number; company_name: string; contact_name: string; estimated_value: number; probability: number; stage: string; created_at: string }>> {
-  const stages = ["new", "contacted", "qualified", "proposal", "negotiation", "won"];
+/**
+ * Returns static demo leads data for UI examples.
+ */
+export async function getDemoLeads(): Promise<
+  Array<{
+    id: number;
+    company_name: string;
+    contact_name: string;
+    estimated_value: number;
+    probability: number;
+    stage: string;
+    created_at: string;
+  }>
+> {
+  const stages = [
+    "new",
+    "contacted",
+    "qualified",
+    "proposal",
+    "negotiation",
+    "won",
+  ];
+
   return stages.map((stage, index) => ({
     id: index + 1,
     company_name: `${["Acme Corp", "TechStart Inc", "Global Solutions", "Innovation Labs", "Future Systems", "Prime Industries"][index]}`,
@@ -386,22 +226,43 @@ export async function getDemoLeads(): Promise<Array<{ id: number; company_name: 
     estimated_value: [25000, 50000, 75000, 100000, 150000, 200000][index],
     probability: [20, 40, 60, 70, 80, 100][index],
     stage,
-    created_at: new Date(Date.now() - (6 - index) * 7 * 24 * 60 * 60 * 1000).toISOString()
+    created_at: new Date(
+      Date.now() - (6 - index) * 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
   }));
 }
 
-export async function getDemoQuotes(): Promise<Array<{ id: number; quote_number: string; customer: string; amount: number; status: string; date: string; valid_until: string }>> {
+/**
+ * Returns static demo quotes data for UI examples.
+ */
+export async function getDemoQuotes(): Promise<
+  Array<{
+    id: number;
+    quote_number: string;
+    customer: string;
+    amount: number;
+    status: string;
+    date: string;
+    valid_until: string;
+  }>
+> {
   const statuses = ["draft", "sent", "approved", "rejected", "expired"];
+
   return Array.from({ length: 5 }, (_, index) => ({
     id: index + 1,
     quote_number: `QT-2026-${String(index + 1).padStart(3, "0")}`,
     customer: `${["Acme Corp", "TechStart Inc", "Global Solutions", "Innovation Labs", "Future Systems"][index]}`,
     amount: [5000, 12500, 8000, 15000, 6500][index],
     status: statuses[index],
-    date: new Date(Date.now() - (5 - index) * 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    valid_until: new Date(Date.now() + (index + 1) * 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+    date: new Date(
+      Date.now() - (5 - index) * 5 * 24 * 60 * 60 * 1000,
+    )
+      .toISOString()
+      .split("T")[0],
+    valid_until: new Date(Date.now() + (index + 1) * 15 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   }));
 }
 
-// Export all schema types
-export * from "../schemas/sales.js";
+export * from "../contracts/sales.js";

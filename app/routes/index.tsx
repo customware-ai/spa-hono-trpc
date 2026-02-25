@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "../components/ui/Table";
 import { trpc } from "../lib/trpc";
-import type { Customer } from "../../server/schemas/sales";
+import type { Customer } from "../../server/contracts/sales";
 
 /**
  * Customers Index Page - Client-Side Rendered with tRPC

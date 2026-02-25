@@ -7,9 +7,6 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  optimizeDeps: {
-    exclude: ["sql.js"],
-  },
   build: {
     minify: "oxc",
   },

@@ -33,8 +33,8 @@ import { trpc } from "~/lib/trpc";
 import { PageLayout } from "~/components/layout/PageLayout";
 
 // Server-side imports
-import { getDatabase } from "../db.js";
-import { CustomerSchema } from "../schemas/sales.js";
+import { getDatabase } from "../db/index.js";
+import { CreateCustomerSchema } from "../contracts/sales.js";
 ```
 
 ---
@@ -52,9 +52,11 @@ This codebase follows strict architectural patterns and coding standards:
 
 ### 2. **Clean Architecture**
 
-- **server/db.ts** - Database & filesystem operations ONLY (single source of truth)
-- **server/services/** - Business logic & CRUD operations (uses Result pattern)
-- **server/schemas/** - Zod validation schemas (source of truth for shared data types)
+- **server/db/index.ts** - Database client initialization (better-sqlite3 + Drizzle)
+- **server/db/schemas.ts** - Drizzle table schema definitions
+- **server/db/queries/** - Database query modules (must use `ResultAsync.fromThrowable`)
+- **server/services/** - Business logic orchestration (must return neverthrow `Result`/`ResultAsync`)
+- **server/contracts/** - Runtime API contracts (Zod) + inferred TypeScript types
 - **server/trpc/router.ts** - API contract and procedure handlers
 - **app/routes/** - Page components and route-level UI composition
 - **app/lib/trpc.ts** - Type-safe API client binding to server router types
@@ -63,11 +65,19 @@ This codebase follows strict architectural patterns and coding standards:
 
 ### 3. **Error Handling**
 
-- Use neverthrow's `Result<T, E>` pattern for all operations that can fail
-- Never throw exceptions in business logic
+- Use neverthrow's `Result<T, E>` and `ResultAsync<T, E>` for all operations that can fail
+- Never throw exceptions in service/query business logic
 - Check `.isErr()` / `.isOk()` before accessing values
 - Provide meaningful error messages
 - **See [Error Handling UX](#error-handling-ux-mandatory) for user-facing error patterns**
+
+### 3.1 **Contract Enforcement (Compile-Time + Runtime)**
+
+- **Compile-time contracts**: all function return types must be explicit and type-safe
+- **Runtime contracts**: all external/untrusted input must be validated with Zod before use
+- **Contract reuse**: derive TypeScript types from Zod schemas (`z.infer<>`), never duplicate shapes manually
+- **Boundary-first validation**: validate at tRPC/service entry, then only pass typed data deeper
+- **No `any`**: use exact types or `unknown` + refinement
 
 ### 4. **Testing Requirements** 🚨 ENFORCED
 
@@ -76,7 +86,7 @@ This codebase follows strict architectural patterns and coding standards:
 **Mandatory Test Coverage:**
 
 - **Frontend changes** (routes, components, hooks, UI behavior) → MUST have component tests
-- **Backend changes** (server services, schemas, db operations, tRPC procedures) → MUST have unit/integration tests
+- **Backend changes** (server services, contracts, db queries/operations, tRPC procedures) → MUST have unit/integration tests
 - **Bug fixes** → MUST have a test that reproduces the bug and verifies the fix
 - **New features** → MUST have tests covering happy paths AND error cases
 
@@ -136,7 +146,9 @@ npm run build         # Build client + compile server TypeScript
 npm run build:client  # Build React Router client output
 npm run build:server  # Compile server TypeScript only
 npm run start         # Run production Hono server
-npm run migrate       # Run server database migrations
+npm run db:generate   # Generate Drizzle SQL migrations from schema changes
+npm run db:migrate    # Run server database migrations
+npm run migrate       # Alias for db:migrate
 npm run typecheck     # TypeScript checking + React Router typegen
 npm run lint          # Type-aware linting with oxlint
 npm test              # Run all tests with Vitest
@@ -158,18 +170,20 @@ npx vitest run tests/db/db.test.ts
 - `hono@^4.12.1`, `@hono/node-server@^1.19.9`, `@hono/trpc-server@^0.4.2`
 - `@trpc/server@^11.10.0`, `@trpc/client@^11.10.0`, `@trpc/react-query@^11.10.0`
 - `@tanstack/react-query@^5.90.21`
-- `sql.js@1.14.0`
+- `better-sqlite3@^12.6.2`
+- `drizzle-orm@^0.45.1`
 - `zod@^4.3.6`, `neverthrow@8.2.0`
 
 **Testing/lint/tooling dependencies (current):**
 
 - `vitest@4.0.18`, `@testing-library/react@16.3.0`, `@testing-library/user-event@14.6.1`
 - `oxlint@1.47.0`, `oxlint-tsgolint@latest`
+- `drizzle-kit@^0.31.9`
 - `typescript@5.9.3`, `tsx@4.21.0`, `concurrently@^9.2.1`
 
 ## Architecture
 
-This is a React Router v7 SPA with a dedicated Hono+tRPC backend and SQLite (sql.js) persistence.
+This is a React Router v7 SPA with a dedicated Hono+tRPC backend and SQLite persistence using better-sqlite3 + Drizzle ORM.
 
 ### Architectural Flow
 
@@ -186,29 +200,32 @@ Hono tRPC Endpoint (/trpc/* in server/index.ts)
     ↓
 tRPC Router Procedures (server/trpc/router.ts)
     ↓
-Service Layer (server/services/erp.ts)
+Service Layer (server/services/[file].ts)
     ↓
-Schema Validation (server/schemas/*.ts)
+Schema Validation (server/contracts/*.ts)
     ↓
-Database Layer (server/db.ts)
+Database Query Layer (server/db/queries/*.ts)
     ↓
-SQLite (sql.js, persisted to ../sqlite/database.db)
+Database Client (server/db/index.ts)
+    ↓
+SQLite (.dbs/database.db)
 ```
 
 **Key Rules:**
 
 1. **App routes/components** call **tRPC hooks**, never import server db/services directly
 2. **tRPC router procedures** call **server services**, not the database directly
-3. **Server services** validate with **server schemas**, then call **server db**
-4. **`server/db.ts`** is the ONLY file that touches filesystem/sql.js internals
-5. All server-side mutable operations use `Result<T, E>` and structured error objects
+3. **Server services** validate with **server/contracts**, then call **server/db/queries**
+4. **`server/db/index.ts`** is the ONLY database client initialization module
+5. All server-side mutable operations use neverthrow (`Result`/`ResultAsync`) and structured error objects
+6. All `server/db/queries/*` functions must use `ResultAsync.fromThrowable(...)`
 
 ### Type Safety Flow
 
 Every layer maintains strict end-to-end type safety:
 
 ```typescript
-// 1. Define schema on the server (server/schemas/sales.ts)
+// 1. Define schema on the server (server/contracts/sales.ts)
 export const CreateCustomerSchema = z.object({
   company_name: z.string().min(1).max(200),
   email: z.string().email().optional(),
@@ -246,19 +263,19 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
 
 ### Database Layer Rules
 
-**CRITICAL**: `server/db.ts` is the ONLY file that:
+**CRITICAL**: `server/db/` is the authoritative database boundary:
 
-- Imports sql.js
-- Reads/writes `../sqlite/database.db` file (outside project directory)
-- Manages database connection lifecycle
-- Calls `saveDatabase()` after all mutations
+- `server/db/index.ts` initializes and exposes the shared Drizzle client
+- `server/db/schemas.ts` defines table schemas
+- `server/db/queries/*.ts` performs reads/writes and returns `ResultAsync`
+- `server/db/migrations/` stores Drizzle SQL migrations and metadata
 
 **NEVER:**
 
-- Import better-sqlite3 (this project uses sql.js)
-- Access filesystem/database files outside `server/db.ts`
-- Bypass service + schema layers from API handlers
-- Skip calling `saveDatabase()` after create/update/delete operations
+- Run ad-hoc SQL directly in `server/services/*` or `server/trpc/*`
+- Bypass query modules from API handlers
+- Return raw thrown errors from query/service functions
+- Use `any` in query/service contracts
 
 ## Development Requirements
 
@@ -267,8 +284,10 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
 1. **Strict Type Safety**
    - Every function must have explicit return types
    - No `any` types - use `unknown` or specific types
-   - Always define Zod schemas for data validation
+   - Enforce compile-time contracts with TypeScript (`strict` mode and explicit signatures)
+   - Enforce runtime contracts with Zod at all trust boundaries (API input, DB row parsing, external payloads)
    - Derive TypeScript types from schemas using `z.infer<>`
+   - Do not duplicate shape definitions across layers
 
 2. **Test Coverage** 🚨 MANDATORY
    - See [Testing Requirements](#4-testing-requirements--enforced) in Core Principles - ALL rules apply
@@ -282,9 +301,11 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
    - Fix any errors before moving to next task
 
 4. **Single Source of Truth**
-   - Database operations ONLY in `server/db.ts`
+   - Database client initialization ONLY in `server/db/index.ts`
+   - Table definitions ONLY in `server/db/schemas.ts`
+   - Database read/write operations ONLY in `server/db/queries/`
    - Business logic ONLY in `server/services/`
-   - Validation schemas ONLY in `server/schemas/`
+   - Validation/contracts ONLY in `server/contracts/`
    - API procedure contracts ONLY in `server/trpc/router.ts`
    - UI route/component logic ONLY in `app/routes/` and `app/components/`
    - Never bypass these layers
@@ -292,6 +313,9 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
 5. **Error Handling Pattern**
    - See [Error Handling](#3-error-handling) in Core Principles for Result pattern
    - See [Error Handling UX](#error-handling-ux-mandatory) for user-facing error patterns
+   - Query modules in `server/db/queries/` MUST use `ResultAsync.fromThrowable(...)`
+   - Service modules in `server/services/` MUST compose query results with neverthrow (`map`, `andThen`, `mapErr`)
+   - Do not throw from query/service logic for expected failure paths
 
 ### Code Style Requirements
 
@@ -305,26 +329,26 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
 
 #### Error Handling with neverthrow
 
-Database and service operations in `server/` return `Result<T, E>` types from neverthrow. Check results with `.isErr()` / `.isOk()` before accessing values. Error types are defined in `server/types/errors.ts`.
+Database queries should return `ResultAsync<T, E>` and service functions should return `Result<T, E>` (or `ResultAsync<T, E>` where composition benefits from it). Check `.isErr()` / `.isOk()` before accessing values. Error types are defined in `server/types/errors.ts`.
 
 ```typescript
-import { Result, ok, err } from "neverthrow";
+import { ResultAsync } from "neverthrow";
 import type { DatabaseError } from "./types/errors";
 
-export async function getRecords(): Promise<
-  Result<SqlValue[][], DatabaseError>
-> {
-  try {
-    const { db } = await getDatabase();
-    const result = db.exec("SELECT * FROM my_table");
-    return ok(result[0]?.values || []);
-  } catch (error) {
-    return err({
+export function getRecords(): ResultAsync<MyRow[], DatabaseError> {
+  const run = ResultAsync.fromThrowable(
+    async () => {
+      const db = getDatabase();
+      return db.select().from(myTable);
+    },
+    (error: unknown) => ({
       type: "DATABASE_ERROR",
       message: "Failed to fetch records",
       originalError: error instanceof Error ? error : undefined,
-    });
-  }
+    }),
+  );
+
+  return run();
 }
 
 // Usage in tRPC procedure handlers
@@ -383,98 +407,64 @@ export async function createUser(data: unknown): Promise<Result<User, Error>> {
 
 #### Database & Migrations
 
-**Database Technology:** sql.js (SQLite in JavaScript) with file persistence to `../sqlite/database.db` (outside project directory)
+**Database Technology:** better-sqlite3 + Drizzle ORM with file persistence at `.dbs/database.db`
 
 **Critical Rules:**
 
-1. **server/db.ts** is the ONLY file that imports sql.js and touches the filesystem
-2. Every mutation MUST call `saveDatabase()` to persist changes
-3. Use the migration system for all schema changes
+1. `server/db/index.ts` is the ONLY DB client initialization entrypoint
+2. `server/db/queries/*.ts` is the ONLY place for database read/write logic
+3. Use Drizzle migrations for all schema changes
 4. Never modify the database schema directly in production
 
 **Migration System:**
 
 ```typescript
-// server/db-migrations/001-initial-schema.ts
-export const migration_001 = {
-  id: 1,
-  name: "initial-schema",
-  up: `
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `,
-  down: `DROP TABLE IF EXISTS users;`,
-};
+// server/db/migrations/0001_initial.sql
+CREATE TABLE `users` (
+  `id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  `name` text NOT NULL
+);
 ```
 
 **Migration Workflow:**
 
 When creating a new migration:
 
-1. **Create** the migration file in `server/db-migrations/` with sequential numbering
-2. **Run** the migration: `npm run migrate`
-3. **Verify** it ran successfully (check for errors in output)
-4. **Test** that it works:
-   - Check `../sqlite/database.db` file was updated
+1. **Generate** migrations from schema changes (preferred): `npm run db:generate`
+2. **Review** generated SQL in `server/db/migrations/`
+3. **Run** migrations: `npm run db:migrate`
+4. **Verify** and test
+   - Check `.dbs/database.db` was updated
    - Verify tables/columns were created correctly
    - Write/update tests for any new database operations
 
 ```bash
 # After creating a migration file:
-npm run migrate              # Apply the migration
+npm run db:generate          # Generate SQL migration
+npm run db:migrate           # Apply the migration
 npm test                     # Ensure tests pass
 ```
 
 **CRITICAL**: Always run and verify migrations immediately after creating them. Never commit a migration file without confirming it runs successfully.
 
-**Database Operations Pattern:**
-
-> ⚠️ **sql.js Caveat**: `last_insert_rowid()` does NOT work reliably with sql.js prepared statements. After executing an INSERT via prepared statement, `last_insert_rowid()` returns `0`. Instead, query by a unique field (like `company_name`) to retrieve the inserted record.
+**Database Query Pattern:**
 
 ```typescript
-// ✅ CORRECT - Query by unique field after INSERT
-export async function insertUser(
-  data: Omit<User, "id">,
-): Promise<Result<User, DatabaseError>> {
-  try {
-    const { db } = await getDatabase();
+export function insertUser(
+  data: InsertUserInput,
+): ResultAsync<User, DatabaseError> {
+  const run = ResultAsync.fromThrowable(async () => {
+    const db = getDatabase();
+    await db.insert(users).values(data);
+    const row = await db.select().from(users).orderBy(desc(users.id)).limit(1);
+    return row[0];
+  }, mapDatabaseError);
 
-    db.run(`INSERT INTO users (name, email) VALUES (?, ?)`, [
-      data.name,
-      data.email,
-    ]);
-
-    // CRITICAL: Save after mutation
-    await saveDatabase();
-
-    // Query by unique field - last_insert_rowid() doesn't work with sql.js prepared statements
-    const result = db.exec(
-      `SELECT * FROM users WHERE email = ? ORDER BY id DESC LIMIT 1`,
-      [data.email],
-    );
-
-    return ok(mapRowToUser(result[0].values[0]));
-  } catch (error) {
-    return err({
-      type: "DATABASE_ERROR",
-      message: "Failed to insert user",
-      originalError: error instanceof Error ? error : undefined,
-    });
-  }
+  return run();
 }
-
-// ❌ WRONG - last_insert_rowid() returns 0 with sql.js prepared statements
-const result = db.exec(`SELECT * FROM users WHERE id = last_insert_rowid()`);
-
-// ❌ WRONG - Never import sql.js outside server/db.ts
-import initSqlJs from "sql.js"; // NEVER DO THIS
 ```
 
-### Directory Structure
+### Directory Structure (Example App)
 
 ```
 app/
@@ -497,21 +487,27 @@ app/
 └── root.tsx             # Root layout component
 
 server/
-├── db.ts                # Database layer (ONLY file for filesystem/sql.js)
+├── contracts/
+│   ├── core.ts          # Core Zod contracts
+│   ├── sales.ts         # Sales/customer Zod contracts
+│   └── index.ts         # Contract exports
+├── db/
+│   ├── index.ts         # Drizzle client initialization
+│   ├── schemas.ts       # Drizzle table definitions
+│   ├── queries/         # Query modules (ResultAsync.fromThrowable required)
+│   │   ├── customers.ts
+│   │   ├── documents.ts
+│   │   ├── tasks.ts
+│   │   └── users.ts
+│   ├── migrations/      # Drizzle SQL migrations + metadata
+│   └── migrate.ts       # Migration runner
 ├── index.ts             # Hono app: CORS, /trpc/*, assets, SPA fallback
 ├── start.ts             # Node server startup entrypoint
-├── db-migrations/
-│   ├── migrate.ts       # Migration engine
-│   ├── run-migrations.ts # Migration runner script
-│   └── 001-erp-schema.ts # Schema migration
 ├── trpc/
 │   ├── index.ts         # tRPC init/context
 │   └── router.ts        # tRPC procedures and API contract
 ├── services/
 │   └── erp.ts           # Business logic
-├── schemas/
-│   ├── index.ts         # Shared schema exports
-│   └── sales.ts         # Sales/customer schemas
 ├── types/
 │   └── errors.ts        # Typed error contracts
 └── utils/
@@ -957,7 +953,7 @@ This app uses:
 
 - Do not build new route features around `loader`/`action`
 - Route components should orchestrate UI + `trpc.*.useQuery()`/`useMutation()`
-- Server logic belongs in `server/trpc/router.ts` → `server/services/` → `server/db.ts`
+- Server logic belongs in `server/trpc/router.ts` → `server/services/` → `server/db/queries/`
 
 ---
 
@@ -1189,10 +1185,11 @@ All backend behavior must stay in `server/`:
 - `server/index.ts`: Hono HTTP wiring (CORS, static assets, `/trpc/*`, fallback)
 - `server/trpc/router.ts`: API procedure definitions
 - `server/services/erp.ts`: business logic
-- `server/schemas/*.ts`: validation and inferred types
-- `server/db.ts`: sql.js + filesystem persistence only
+- `server/contracts/*.ts`: runtime validation + inferred types
+- `server/db/index.ts`: database client initialization
+- `server/db/queries/*.ts`: database reads/writes
 
-Never import `server/db.ts` or `server/services/*` directly from `app/` route modules.
+Never import `server/db/*` or `server/services/*` directly from `app/` route modules.
 
 ---
 
