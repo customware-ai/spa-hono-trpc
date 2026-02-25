@@ -13,7 +13,7 @@ import {
 /**
  * Maximum number of lines stored for the runtime log file.
  */
-export const MAX_LOG_LINES = 100;
+export const MAX_LOG_LINES = 99;
 
 /**
  * Backend logger persistence error contract.
@@ -81,7 +81,8 @@ function normalizeContext(value: unknown): Record<string, unknown> {
  * Sanitizes invalid input and ensures valid timestamp.
  */
 function normalizeTimestamp(timestamp?: string): string {
-  return timestamp !== undefined && Number.isNaN(Date.parse(timestamp)) === false
+  return timestamp !== undefined &&
+    Number.isNaN(Date.parse(timestamp)) === false
     ? timestamp
     : new Date().toISOString();
 }
@@ -106,7 +107,9 @@ function persistLine(
   line: string,
 ): Result<void, LogPersistError> {
   try {
-    const priorContent = existsSync(filePath) ? readFileSync(filePath, "utf8") : "";
+    const priorContent = existsSync(filePath)
+      ? readFileSync(filePath, "utf8")
+      : "";
     const priorLines = priorContent
       .split(/\r?\n/)
       .map((value) => value.trim())
@@ -144,7 +147,9 @@ function persistLogEntry(
 /**
  * Persist logs produced by frontend caller.
  */
-export function logFrontendPayload(input: unknown): Result<void, LogPersistError> {
+export function logFrontendPayload(
+  input: unknown,
+): Result<void, LogPersistError> {
   const parsed = FrontendLogSchema.safeParse(input);
   if (!parsed.success) {
     return err({

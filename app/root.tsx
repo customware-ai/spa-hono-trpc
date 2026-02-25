@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -14,8 +13,7 @@ import { AlertTriangle } from "lucide-react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { logger } from "./utils/logger";
-import { attachGlobalFrontendErrorHandlers, logFrontendError } from "./utils/error-logger";
+import { logFrontendError } from "./utils/error-logger";
 import { Card, CardContent } from "./components/ui/Card";
 import { Button } from "./components/ui/Button";
 
@@ -81,21 +79,6 @@ export function HydrateFallback(): ReactElement {
 }
 
 export default function App(): ReactElement {
-  /**
-   * @critical
-   * @description
-   * Attach global frontend error handlers once on app mount.
-   * This forwards uncaught window/document errors and unhandled promise
-   * rejections to `POST /logs`, which persists logs in `.runtime.logs`.
-   * @important
-   * Do NOT remove this initializer. Without it, frontend runtime errors
-   * are no longer captured for the shared log pipeline.
-   */
-  useEffect(() => {
-    const detach = attachGlobalFrontendErrorHandlers({ endpoint: "/logs" });
-    return detach;
-  }, []);
-
   return <Outlet />;
 }
 
@@ -103,11 +86,6 @@ export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
   // Log error for monitoring
-  logger.error("Application error", {
-    message: error instanceof Error ? error.message : "Unknown error",
-    stack: error instanceof Error ? error.stack : undefined,
-    isRouteError: isRouteErrorResponse(error),
-  });
   logFrontendError(
     error instanceof Error ? error.message : "Route error",
     {

@@ -1,7 +1,5 @@
 "use client";
 
-import { logger } from "./logger";
-
 type FrontendLogLevel = "debug" | "info" | "warn" | "error";
 
 interface ErrorLoggerOptions {
@@ -87,13 +85,6 @@ function buildLogPayload(
   };
 }
 
-function formatContextMessage(
-  message: string,
-  context: unknown,
-): string {
-  return `${message} ${JSON.stringify(context)}`;
-}
-
 /**
  * Sends a single app error payload to backend logging endpoint.
  */
@@ -110,16 +101,7 @@ export function sendFrontendLog(
     body: JSON.stringify(payload),
     keepalive: true,
   }).catch((error: unknown) => {
-    logger.warn("Failed to forward frontend log.", {
-      error: error instanceof Error ? error.message : "Unknown fetch error",
-      logContext: formatContextMessage(payload.message, {
-        eventType: "window-error",
-        reason: {
-          message: payload.message,
-          context: payload.context,
-        },
-      } as ErrorContext),
-    });
+    console.warn("Failed to forward frontend log.", { error });
   });
 }
 
