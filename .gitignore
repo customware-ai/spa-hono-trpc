@@ -4,7 +4,7 @@
 
 .tmp/
 tmp/
-.logs/
+/.runtime.logs
 logs/
 
 # Local sqlite database files
