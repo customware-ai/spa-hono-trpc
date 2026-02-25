@@ -1,19 +1,12 @@
-import { and, asc, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, eq, like, or, type SQL } from "drizzle-orm";
 import { ResultAsync } from "neverthrow";
+import type { CreateCustomerInput, ListCustomersFilter } from "../../contracts/customer.js";
 import type { DatabaseError } from "../../types/errors.js";
 import { getDatabase } from "../index.js";
 import { customers } from "../schemas.js";
 
 /**
- * Input type for querying customers.
- */
-export interface CustomerFilters {
-  status?: "active" | "inactive";
-  search?: string;
-}
-
-/**
- * Converts unknown errors to the DatabaseError contract.
+ * Maps unknown errors to a typed database error contract.
  */
 function mapDatabaseError(message: string, error: unknown): DatabaseError {
   return {
@@ -24,135 +17,72 @@ function mapDatabaseError(message: string, error: unknown): DatabaseError {
 }
 
 /**
- * Returns customers with optional status and search filters.
+ * Reads customers with optional status and text search filters.
  */
-export function selectCustomers(
-  filters?: CustomerFilters,
-): ResultAsync<typeof customers.$inferSelect[], DatabaseError> {
+export function listCustomerRows(
+  filters: ListCustomersFilter,
+): ResultAsync<(typeof customers.$inferSelect)[], DatabaseError> {
   const run = ResultAsync.fromThrowable(async () => {
     const db = getDatabase();
-    const conditions = [];
+    const predicates: SQL[] = [];
 
-    if (filters?.status) {
-      conditions.push(eq(customers.status, filters.status));
+    if (filters.status) {
+      predicates.push(eq(customers.status, filters.status));
     }
 
-    if (filters?.search) {
-      const searchPattern = `%${filters.search}%`;
-      conditions.push(
-        or(
-          like(customers.company_name, searchPattern),
-          like(customers.email, searchPattern),
-        ),
+    if (filters.search) {
+      const pattern = `%${filters.search}%`;
+      const searchPredicate = or(
+        like(customers.company_name, pattern),
+        like(customers.email, pattern),
       );
+
+      if (searchPredicate) {
+        predicates.push(searchPredicate);
+      }
     }
 
-    if (conditions.length > 0) {
-      return db
-        .select()
-        .from(customers)
-        .where(and(...conditions))
-        .orderBy(asc(customers.company_name));
+    if (predicates.length === 0) {
+      return db.select().from(customers).orderBy(asc(customers.company_name));
     }
 
-    return db.select().from(customers).orderBy(asc(customers.company_name));
-  }, (error: unknown) => mapDatabaseError("Failed to select customers", error));
+    const whereClause =
+      predicates.length === 1 ? predicates[0] : and(...predicates);
 
-  return run();
-}
-
-/**
- * Returns one customer by id.
- */
-export function selectCustomerById(
-  id: number,
-): ResultAsync<typeof customers.$inferSelect | undefined, DatabaseError> {
-  const run = ResultAsync.fromThrowable(async () => {
-    const db = getDatabase();
-
-    const rows = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
-
-    return rows[0];
-  }, (error: unknown) => mapDatabaseError("Failed to select customer by id", error));
-
-  return run();
-}
-
-/**
- * Inserts one customer and returns the created row.
- */
-export function insertCustomer(
-  data: {
-    company_name: string;
-    email?: string | null;
-    phone?: string | null;
-    status?: "active" | "inactive";
-    notes?: string | null;
-  },
-): ResultAsync<typeof customers.$inferSelect | undefined, DatabaseError> {
-  const run = ResultAsync.fromThrowable(async () => {
-    const db = getDatabase();
-
-    await db.insert(customers).values({
-      company_name: data.company_name,
-      email: data.email ?? null,
-      phone: data.phone ?? null,
-      status: data.status ?? "active",
-      notes: data.notes ?? null,
-    });
-
-    const rows = await db
+    return db
       .select()
       .from(customers)
-      .where(eq(customers.company_name, data.company_name))
-      .orderBy(desc(customers.id))
-      .limit(1);
-
-    return rows[0];
-  }, (error: unknown) => mapDatabaseError("Failed to insert customer", error));
+      .where(whereClause)
+      .orderBy(asc(customers.company_name));
+  }, (error: unknown) => mapDatabaseError("Failed to list customers", error));
 
   return run();
 }
 
 /**
- * Updates one customer and returns the updated row.
+ * Inserts a customer and returns the created row.
  */
-export function updateCustomerById(
-  id: number,
-  data: {
-    company_name?: string;
-    email?: string | null;
-    phone?: string | null;
-    status?: "active" | "inactive";
-    notes?: string | null;
-  },
-): ResultAsync<typeof customers.$inferSelect | undefined, DatabaseError> {
+export function createCustomerRow(
+  input: CreateCustomerInput,
+): ResultAsync<typeof customers.$inferSelect, DatabaseError> {
   const run = ResultAsync.fromThrowable(async () => {
     const db = getDatabase();
+    const createdRows = await db
+      .insert(customers)
+      .values({
+        company_name: input.company_name,
+        email: input.email ?? null,
+        status: input.status ?? "active",
+      })
+      .returning();
 
-    if (Object.keys(data).length > 0) {
-      await db.update(customers).set(data).where(eq(customers.id, id));
+    const created = createdRows[0];
+    if (!created) {
+      throw new Error("Customer insert returned no rows");
     }
 
-    const rows = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
-
-    return rows[0];
-  }, (error: unknown) => mapDatabaseError("Failed to update customer", error));
-
-  return run();
-}
-
-/**
- * Soft deletes one customer by setting the status to inactive.
- */
-export function softDeleteCustomerById(
-  id: number,
-): ResultAsync<void, DatabaseError> {
-  const run = ResultAsync.fromThrowable(async () => {
-    const db = getDatabase();
-
-    await db.update(customers).set({ status: "inactive" }).where(eq(customers.id, id));
-  }, (error: unknown) => mapDatabaseError("Failed to soft delete customer", error));
+    return created;
+  }, (error: unknown) => mapDatabaseError("Failed to create customer", error));
 
   return run();
 }

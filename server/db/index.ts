@@ -7,11 +7,6 @@ import {
 } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schemas.js";
 
-/**
- * Primitive SQL value type used by legacy helper APIs.
- */
-export type SqlValue = number | string | Uint8Array | null;
-
 export type DatabaseClient = BetterSQLite3Database<typeof schema>;
 
 /**

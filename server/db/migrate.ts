@@ -4,11 +4,16 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { getDatabase } from "./index.js";
 
 /**
- * Runs all pending Drizzle migrations from server/db/migrations.
+ * Applies all generated Drizzle migrations from server/db/migrations.
  */
 export async function runMigrations(): Promise<void> {
   const db = getDatabase();
-  const migrationsFolder = path.join(process.cwd(), "server", "db", "migrations");
+  const migrationsFolder = path.join(
+    process.cwd(),
+    "server",
+    "db",
+    "migrations",
+  );
 
   migrate(db, { migrationsFolder });
 

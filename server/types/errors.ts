@@ -1,20 +1,22 @@
+/**
+ * Typed database failure contract.
+ */
 export type DatabaseError = {
-  type: 'DATABASE_ERROR';
+  type: "DATABASE_ERROR";
   message: string;
   originalError?: Error;
 };
 
+/**
+ * Typed validation failure contract.
+ */
 export type ValidationError = {
-  type: 'VALIDATION_ERROR';
-  field: string;
+  type: "VALIDATION_ERROR";
   message: string;
+  issues: string[];
 };
 
-export type NotFoundError = {
-  type: 'NOT_FOUND';
-  resource: string;
-  id: number | string;
-  message: string;
-};
-
-export type AppError = DatabaseError | ValidationError | NotFoundError;
+/**
+ * App-level error union used by services and route adapters.
+ */
+export type AppError = DatabaseError | ValidationError;
