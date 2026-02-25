@@ -33,24 +33,15 @@ export const CreateLocalCustomerSchema = z.object({
 const LocalCustomerListSchema = z.array(LocalCustomerSchema);
 
 export type LocalCustomer = z.infer<typeof LocalCustomerSchema>;
-export type CreateLocalCustomerInput = z.infer<typeof CreateLocalCustomerSchema>;
-
-/**
- * Guards all localStorage operations so route modules remain safe in non-browser contexts.
- */
-function isBrowserRuntime(): boolean {
-  return typeof window !== "undefined";
-}
+export type CreateLocalCustomerInput = z.infer<
+  typeof CreateLocalCustomerSchema
+>;
 
 /**
  * Reads and validates persisted customers from localStorage.
  * Invalid payloads are treated as empty state to keep UI recoverable.
  */
 export function getCustomersFromStorage(): LocalCustomer[] {
-  if (!isBrowserRuntime()) {
-    return [];
-  }
-
   const rawValue = window.localStorage.getItem(CUSTOMERS_STORAGE_KEY);
   if (!rawValue) {
     return [];
@@ -74,10 +65,6 @@ export function getCustomersFromStorage(): LocalCustomer[] {
  * Persists customers after validating list shape.
  */
 export function setCustomersInStorage(customers: LocalCustomer[]): void {
-  if (!isBrowserRuntime()) {
-    return;
-  }
-
   const validation = LocalCustomerListSchema.safeParse(customers);
   if (!validation.success) {
     return;
@@ -101,9 +88,10 @@ export function addCustomerToStorage(input: unknown): LocalCustomer | null {
 
   const existingCustomers = getCustomersFromStorage();
   const nextId =
-    existingCustomers.reduce((maxId, customer) =>
-      customer.id > maxId ? customer.id : maxId,
-    0) + 1;
+    existingCustomers.reduce(
+      (maxId, customer) => (customer.id > maxId ? customer.id : maxId),
+      0,
+    ) + 1;
 
   const now = new Date().toISOString();
 
@@ -127,9 +115,5 @@ export function addCustomerToStorage(input: unknown): LocalCustomer | null {
  * Test/helper utility to clear customer storage state.
  */
 export function clearCustomersFromStorage(): void {
-  if (!isBrowserRuntime()) {
-    return;
-  }
-
   window.localStorage.removeItem(CUSTOMERS_STORAGE_KEY);
 }

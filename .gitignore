@@ -2,6 +2,11 @@
 .env
 /node_modules/
 
+.tmp/
+tmp/
+.logs/
+logs/
+
 # Local sqlite database files
 .dbs/
 
