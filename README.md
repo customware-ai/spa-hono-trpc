@@ -1,65 +1,63 @@
 # Template for React Router App with Tailwind CSS and SQLite
 
-**This is a code style and architecture template repository.** Use this as a reference for coding patterns, project structure, and development standards when building production applications. The template demonstrates best practices through an ERP-style application structure built with React Router v7, TypeScript, Tailwind CSS, and SQLite.
+**This is a code style and architecture template repository.** Use it as a reference for coding patterns, project structure, and development standards when building production applications.
 
-> **⚠️ Important**: This is a **template repository** showcasing code patterns and styles, not a functional application. Use it to understand the coding standards, architectural patterns, and file organization for your own projects.
+The template demonstrates a simplified, modern stack with React Router v7, TypeScript, Tailwind CSS, Hono, tRPC, and SQLite via Drizzle + better-sqlite3.
 
-> **Required reading**: Review [AGENTS.md](./AGENTS.md) before development for coding patterns, commands, and project conventions.
+> **⚠️ Important**: This is a **template repository** showcasing patterns and structure, not a feature-complete product.
+
+> **Required reading**: Review [AGENTS.md](./AGENTS.md) before development for commands, coding standards, and architecture rules.
 
 ## 📋 What This Template Provides
 
 ### ✅ Use This Template For:
 
-- **Code Style Reference** - See how to structure TypeScript, React, and Tailwind code
-- **Architecture Patterns** - Learn proper separation of concerns (db → services → routes → components)
-- **Type Safety Examples** - Understand neverthrow Result pattern and Zod validation
-- **UI Component Library** - Reusable, tested components with consistent styling
-- **Database Patterns** - Migration system, CRUD operations, proper abstraction
-- **Project Organization** - File structure for scalable applications
+- **Code Style Reference** - TypeScript + React + Tailwind conventions
+- **Architecture Patterns** - Clean layering (contracts → queries → services → routes)
+- **Type Safety Examples** - Zod contracts + neverthrow error handling
+- **UI Component Library** - Reusable, tested UI primitives
+- **Database Patterns** - Drizzle schema + migration workflow
+- **Project Organization** - Scalable app/server/test directory structure
 
 ### ❌ This Template Does NOT Provide:
 
-- A working, feature-complete application
-- Production-ready business logic (focus is on code patterns, not business features)
-- A starter project to deploy as-is (adapt patterns to your own requirements)
+- A complete business product
+- Domain-complete ERP/accounting features
+- Ready-to-ship production logic without adaptation
 
 ### 💡 How to Use This Template:
 
-1. **Study the code patterns** in components, services, and routes
-2. **Copy the architectural structure** for your own project
-3. **Adapt the UI components** to your design system
-4. **Follow the coding standards** demonstrated throughout
-5. **Reference AGENTS.md** for development commands and conventions
+1. Study the patterns in `app/`, `server/`, and `tests/`
+2. Copy the structure into your own project
+3. Replace the example customer slice with your domain modules
+4. Keep strict contracts and Result-based error handling
+5. Follow [AGENTS.md](./AGENTS.md) for development workflow
 
 ## 🔍 What's Working vs What's a Pattern
 
 ### ✅ Fully Functional (Study These):
 
-- **Customer CRUD** - Complete create, read, update, delete operations
-- **Database Layer** - Full migration system and persistence
-- **Component Library** - All UI components are functional and tested
-- **Type Safety** - Complete Zod schemas and Result patterns
-- **Layout System** - Sidebar navigation, responsive design
+- **UI shell and pages** - Shared `MainLayout` + customer list/create routes
+- **Server example slice** - `customer` contract/query/service/tRPC route chain
+- **Database layer** - Drizzle schema + generated SQL migrations + runner
+- **Quality gates** - Typecheck, lint, build, and test workflows
+- **Component library** - Tested reusable UI building blocks
 
-### 📐 Pattern Examples Only (Non-Functional):
+### 📐 Pattern Scaffolding:
 
-- **Most Action Buttons** - Demonstrate UI patterns, not actual features
-- **Leads, Quotes, Orders** - Show data display patterns with demo data
-- **Invoices, Payments** - Illustrate accounting UI patterns
-- **Reports, Charts** - Template for report generation interfaces
-
-> **Key Insight**: The working Customer module shows the **complete pattern** from database to UI. Other modules show **UI patterns** you can implement following the same architectural approach.
+- **tRPC client/provider files in `app/lib/`** - Available as typed integration scaffolding
+- **Single-module backend design** - Intentionally minimal for extension
 
 ## Template Features & Patterns
 
 This template demonstrates:
 
-- **Modern Stack**: React Router v7.13 SPA mode with Hono + tRPC backend, Vite 8, TypeScript strict mode
-- **Type Safety**: Zod v4 schemas + neverthrow Result pattern for error handling
-- **Database Layer**: SQLite via better-sqlite3 + Drizzle ORM with proper abstraction and migration system
-- **UI Patterns**: Tailwind CSS v4 with professional custom theme and reusable components
-- **Code Quality**: Type-aware linting (oxlint), comprehensive testing setup
-- **Architecture**: Clean client/server separation (`app/` + `server/`) with typed API boundary
+- **Modern Stack**: React Router SPA mode with Hono + tRPC backend, Vite 8, strict TypeScript
+- **Type Safety**: Zod runtime contracts + neverthrow Result/ResultAsync patterns
+- **Database Layer**: better-sqlite3 + Drizzle ORM with migration-driven schema changes
+- **UI Patterns**: Tailwind CSS v4 with reusable components and a shared app layout
+- **Code Quality**: Type-aware linting (oxlint) + Vitest coverage
+- **Architecture**: Explicit client/server boundary with typed API contracts
 
 ## Tech Stack
 
@@ -82,10 +80,10 @@ This template demonstrates:
 
 ## 🎨 Design
 
-- **UI Components**: shadcn/ui with Radix primitives
-- **Color Palette**: Blue primary with neutral grays (shadcn default)
-- **Typography**: System fonts with clean, minimal styling
-- **Style**: Clean, professional, shadcn-inspired design
+- **UI Components**: shadcn/ui-style primitives
+- **Color System**: professional neutral base with clear status states
+- **Typography**: clean, readable hierarchy for dashboard-style layouts
+- **Layout**: shared shell via `app/layouts/MainLayout.tsx`
 
 ## 🚀 Quick Start
 
@@ -93,112 +91,82 @@ This template demonstrates:
 # Install dependencies
 npm install
 
-# Generate + run database migrations
+# Generate and apply SQL migrations
 npm run db:generate
 npm run db:migrate
 
-# Or build for production
+# Build and run
 npm run build
+npm run start
 ```
-
-> **For development workflow and coding guidelines**, see [AGENTS.md](./AGENTS.md)
 
 ## 📁 Project Structure
 
-```
+```text
 app/
 ├── components/
-│   ├── layout/          # Page layout primitives
-│   └── ui/              # Reusable UI components
+│   └── ui/                    # Reusable UI components
 ├── hooks/
-│   └── use-mobile.tsx   # Client hook
+│   └── use-mobile.tsx
+├── layouts/
+│   └── MainLayout.tsx         # Shared page shell + header
 ├── lib/
-│   ├── trpc.ts          # Typed tRPC client
-│   ├── trpc-provider.tsx # Provider composition
-│   └── utils.ts         # Client utilities
+│   ├── trpc.ts                # Typed tRPC client type binding
+│   ├── trpc-provider.tsx      # Typed provider scaffolding
+│   └── utils.ts
 ├── routes/
-│   ├── index.tsx        # Customers list route
-│   ├── customers.new.tsx # Create customer route
-│   └── customers.$id.tsx # Customer detail route
-├── utils/
-│   └── logger.ts        # Client logging utility
-├── routes.ts            # React Router route config
-└── root.tsx             # Root app shell
+│   ├── index.tsx              # Customer list page
+│   └── customers.new.tsx      # Customer create page
+├── routes.ts                  # Route definitions
+└── root.tsx
 
 server/
 ├── contracts/
-│   ├── core.ts          # Core runtime contracts (Zod)
-│   ├── sales.ts         # Sales/customer contracts
-│   └── index.ts         # Contract exports
+│   ├── customer.ts            # Zod runtime contracts
+│   └── index.ts
 ├── db/
-│   ├── index.ts         # Database client + connection lifecycle
-│   ├── schemas.ts       # Drizzle table schemas
-│   ├── queries/         # Reusable query modules
-│   ├── migrations/      # SQL migrations + drizzle metadata
-│   └── migrate.ts       # Migration runner
-├── index.ts             # Hono app setup + static serving + /trpc/*
-├── start.ts             # Production server entrypoint
-├── trpc/
-│   ├── index.ts         # tRPC initialization
-│   └── router.ts        # API procedures
+│   ├── index.ts               # Drizzle + better-sqlite3 init
+│   ├── schemas.ts             # Drizzle table schema
+│   ├── queries/
+│   │   └── customers.ts       # Query layer (ResultAsync)
+│   ├── migrations/            # Generated SQL + drizzle metadata
+│   └── migrate.ts             # Migration runner
 ├── services/
-│   └── erp.ts           # Business logic
+│   └── customer.ts            # Business logic
+├── trpc/
+│   └── router.ts              # API procedures
 ├── types/
-│   └── errors.ts        # Error contracts
-├── utils/
-│   ├── calculations.ts  # Domain calculations
-│   └── validate.ts      # Validation helpers
+│   └── errors.ts              # Shared app error contracts
+├── index.ts                   # Hono app setup
+├── start.ts                   # Server entrypoint
 └── tsconfig.json
+
+tests/
+├── components/                # UI component tests
+├── db/                        # DB behavior tests
+├── layouts/                   # Layout tests
+├── routes/                    # Route tests
+├── services/                  # Service tests
+└── lib/                       # Utility tests
 ```
 
 ## 🗄️ Database Architecture
 
-**Technology**: SQLite via better-sqlite3 + Drizzle ORM with persistence to `.dbs/database.db`
+**Technology**: SQLite (`better-sqlite3`) + Drizzle ORM
 
-**Key Pattern**: All database operations go through `server/db/` (single source of truth for schema, query, and migration access)
+**Database file path**: `.dbs/database.db`
+
+**Migration workflow**:
+
+1. Update `server/db/schemas.ts`
+2. Run `npm run db:generate`
+3. Run `npm run db:migrate`
 
 ### Tables Implemented
 
-**Sales & CRM:**
+- `customers`
 
-- `customers` - Customer records with contact info
-- `contacts` - Multiple contacts per customer
-- `leads` - Sales pipeline and prospect tracking
-- `opportunities` - Deal tracking with probability
-- `quotes` & `quote_items` - Quotations with line items
-- `sales_orders` & `sales_order_items` - Confirmed orders
-- `activities` - CRM activity log (calls, meetings, tasks)
-
-**Accounting & Finance:**
-
-- `chart_of_accounts` - Account hierarchy (assets, liabilities, equity, revenue, expenses)
-- `invoices` & `invoice_items` - Customer invoices with line items
-- `payments` - Payment records linked to invoices
-- `journal_entries` & `journal_entry_lines` - Manual accounting entries
-- `ledger` - General ledger (transaction history per account)
-- `bank_accounts` - Bank account details
-
-### Database Persistence
-
-The database persists to `.dbs/database.db` inside the repository. The `.dbs` directory is created automatically when needed.
-
-**On startup:**
-
-- If `.dbs/database.db` exists, better-sqlite3 opens it directly
-- If not, running `npm run db:migrate` creates the schema via Drizzle migrations
-
-**On mutations:**
-
-- better-sqlite3 writes through directly
-- Data survives server restarts
-
-**To reset:**
-
-```bash
-rm -rf .dbs/database.db
-npm run db:migrate
-npm run dev
-```
+This intentionally keeps one example table so teams can extend from a clean baseline.
 
 ## 📝 Scripts
 
@@ -209,8 +177,7 @@ npm run dev
 | `npm run build:server` | Compile server TypeScript            |
 | `npm run start`        | Start production Hono server         |
 | `npm run db:generate`  | Generate Drizzle SQL migrations      |
-| `npm run db:migrate`   | Run server database migrations       |
-| `npm run migrate`      | Alias for `npm run db:migrate`       |
+| `npm run db:migrate`   | Run Drizzle migrations               |
 | `npm run typecheck`    | TypeScript type checking             |
 | `npm run lint`         | Type-aware linting with oxlint       |
 | `npm test`             | Run all tests                        |
@@ -221,38 +188,36 @@ npm run dev
 ### Running Tests
 
 ```bash
-npm test              # Run all tests
-npm run check        # Full check (includes tests)
+npm test
+npm run check
 ```
 
-### Test Coverage
+### Coverage Areas
 
-Tests cover:
+- UI components
+- App routes and layout behavior
+- Database behavior
+- Server service layer
 
-- UI components (Button, Card, Input, Badge, Alert, Table)
-- Database operations
-- Server-side service/business logic
+All tests use Vitest (and React Testing Library for UI).
 
-All tests use Vitest and React Testing Library.
+## 🏗️ Example Module
 
-## 🏗️ Application Modules
+The repository includes one cohesive example module:
 
-The codebase currently centers on the customer module to demonstrate end-to-end patterns:
+- **Customer**
+  - Contract: `server/contracts/customer.ts`
+  - Query: `server/db/queries/customers.ts`
+  - Service: `server/services/customer.ts`
+  - API route: `server/trpc/router.ts`
 
-- **Customers** - List, create, and detail views
-- **Typed API** - tRPC procedures consumed via React Query hooks
-- **Server Data Layer** - Services, contracts, db queries, Drizzle migrations, and better-sqlite3 persistence
-
-> **For development guidelines, coding patterns, and architectural rules**, see [AGENTS.md](./AGENTS.md)
+Use this as the canonical pattern when adding your own modules.
 
 ## 📖 Documentation
 
-- **README.md** - This file (project overview and quick start)
-- **[AGENTS.md](./AGENTS.md)** - Development patterns, coding rules, and architectural guidelines
-- Code comments throughout codebase
+- [README.md](./README.md) - Project overview and quick start
+- [AGENTS.md](./AGENTS.md) - Development standards and architectural rules
 
 ---
 
-_Remember:_ This is a **code pattern reference**, not a working application. Study the patterns, adapt the architecture, and build your own production-ready features following these standards.
-
-> For all development rules, patterns, and guidelines, see **[AGENTS.md](./AGENTS.md)**
+This repository is designed as a reference baseline: keep the structure, extend by module, and preserve strict contracts and typed boundaries.

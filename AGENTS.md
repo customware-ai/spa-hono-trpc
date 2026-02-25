@@ -148,7 +148,6 @@ npm run build:server  # Compile server TypeScript only
 npm run start         # Run production Hono server
 npm run db:generate   # Generate Drizzle SQL migrations from schema changes
 npm run db:migrate    # Run server database migrations
-npm run migrate       # Alias for db:migrate
 npm run typecheck     # TypeScript checking + React Router typegen
 npm run lint          # Type-aware linting with oxlint
 npm test              # Run all tests with Vitest
