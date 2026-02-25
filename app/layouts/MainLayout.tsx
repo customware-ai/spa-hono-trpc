@@ -1,9 +1,9 @@
 import { Fragment } from "react";
 import type { ReactElement, ReactNode } from "react";
-import { Link, useLocation } from "react-router";
-import { Moon, Sun, Users } from "lucide-react";
-import { Button } from "~/components/ui/Button";
-import { Separator } from "~/components/ui/Separator";
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import { Moon, Plus, Sun, Users } from "lucide-react";
+import { Button } from "../components/ui/Button";
+import { Separator } from "../components/ui/Separator";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "~/components/ui/Sidebar";
+} from "../components/ui/Sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,25 +26,87 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "~/components/ui/Breadcrumb";
+} from "../components/ui/Breadcrumb";
 
 interface BreadcrumbConfig {
   label: string;
   href?: string;
 }
 
-interface PageLayoutProps {
-  children: ReactNode;
-  breadcrumbs?: BreadcrumbConfig[];
+interface HeaderConfig {
+  title: string;
+  description: string;
+  breadcrumbs: BreadcrumbConfig[];
+  showCreateAction: boolean;
+}
+
+interface MainHeaderProps {
+  title: string;
+  description: string;
+  actions?: ReactNode;
 }
 
 const navItems = [{ label: "Customers", href: "/", icon: Users }];
 
-export function PageLayout({
-  children,
-  breadcrumbs = [],
-}: PageLayoutProps): ReactElement {
+/**
+ * Resolves page-level header and breadcrumb content from the current route.
+ * This centralizes layout metadata so routes only render page bodies.
+ */
+function getHeaderConfig(pathname: string): HeaderConfig {
+  if (pathname === "/customers/new") {
+    return {
+      title: "New Customer",
+      description: "Create a new customer record in local storage.",
+      breadcrumbs: [
+        { label: "Customers", href: "/" },
+        { label: "New Customer" },
+      ],
+      showCreateAction: false,
+    };
+  }
+
+  return {
+    title: "Customers",
+    description: "Manage customer records stored in your browser.",
+    breadcrumbs: [{ label: "Customers" }],
+    showCreateAction: true,
+  };
+}
+
+/**
+ * Renders the main page header section used by customer pages.
+ */
+function MainHeader({
+  title,
+  description,
+  actions,
+}: MainHeaderProps): ReactElement {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Shared application layout route with integrated shell and page header.
+ */
+export default function MainLayout(): ReactElement {
   const location = useLocation();
+  const navigate = useNavigate();
+  const headerConfig = getHeaderConfig(location.pathname);
+  const createCustomerAction = headerConfig.showCreateAction ? (
+    <Button variant="default" onClick={() => navigate("/customers/new")}>
+      <Plus className="mr-2 h-4 w-4" />
+      New Customer
+    </Button>
+  ) : undefined;
 
   const toggleTheme = (): void => {
     document.documentElement.classList.toggle("dark");
@@ -53,7 +115,6 @@ export function PageLayout({
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        {/* Logo / company header */}
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -74,7 +135,6 @@ export function PageLayout({
           </SidebarMenu>
         </SidebarHeader>
 
-        {/* Nav */}
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Sales</SidebarGroupLabel>
@@ -104,7 +164,6 @@ export function PageLayout({
           </SidebarGroup>
         </SidebarContent>
 
-        {/* Footer: theme toggle */}
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -126,10 +185,10 @@ export function PageLayout({
             className="mr-2 data-[orientation=vertical]:h-4"
           />
 
-          {breadcrumbs.length > 0 && (
+          {headerConfig.breadcrumbs.length > 0 && (
             <Breadcrumb>
               <BreadcrumbList>
-                {breadcrumbs.map((crumb, index) => (
+                {headerConfig.breadcrumbs.map((crumb, index) => (
                   <Fragment key={crumb.href ?? crumb.label}>
                     {index > 0 && <BreadcrumbSeparator />}
                     <BreadcrumbItem>
@@ -156,7 +215,14 @@ export function PageLayout({
           </div>
         </header>
 
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6">
+          <MainHeader
+            title={headerConfig.title}
+            description={headerConfig.description}
+            actions={createCustomerAction}
+          />
+          <Outlet />
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

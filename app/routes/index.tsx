@@ -1,15 +1,12 @@
 import type { ReactElement } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Users } from "lucide-react";
-import { PageLayout } from "../components/layout/PageLayout";
-import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
-import { Alert } from "../components/ui/Alert";
 import {
   Table,
   TableBody,
@@ -18,85 +15,69 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/Table";
-import { trpc } from "../lib/trpc";
-import type { Customer } from "../../server/contracts/sales";
+import {
+  getCustomersFromStorage,
+  type LocalCustomer,
+} from "../lib/local-storage";
 
 /**
- * Customers Index Page - Client-Side Rendered with tRPC
- * 
- * This page fetches customer data using tRPC React Query hooks.
- * All data fetching happens on the client side.
+ * Customers List Page
+ *
+ * Loads customer data from localStorage and supports client-side filtering.
  */
-
 export default function IndexPage(): ReactElement {
   const navigate = useNavigate();
 
-  // Local state for filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [customers, setCustomers] = useState<LocalCustomer[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
-  // Fetch customers using tRPC
-  const { data: customers = [], isLoading, error } = trpc.getCustomers.useQuery();
+  useEffect((): void => {
+    // Load persisted customers after mount to avoid hydration mismatch.
+    setCustomers(getCustomersFromStorage());
+    setIsReady(true);
+  }, []);
 
-  // Filter customers based on local state
-  const filteredCustomers = customers.filter((customer: Customer) => {
-    const matchesSearch =
-      !searchQuery ||
-      customer.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCustomers = useMemo((): LocalCustomer[] => {
+    return customers.filter((customer) => {
+      const matchesSearch =
+        !searchQuery ||
+        customer.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || customer.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || customer.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [customers, searchQuery, statusFilter]);
 
-  // Show loading skeleton
-  if (isLoading) {
+  if (!isReady) {
     return (
-      <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-        <PageHeader
-          title="Customers"
-          description="Manage your customer relationships and contact information."
-        />
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-full" />
-          {["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"].map((key) => (
-            <Skeleton key={key} className="h-12 w-full" />
-          ))}
-        </div>
-      </PageLayout>
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full" />
+        {[
+          "placeholder-1",
+          "placeholder-2",
+          "placeholder-3",
+          "placeholder-4",
+        ].map((key) => (
+          <Skeleton key={key} className="h-12 w-full" />
+        ))}
+      </div>
     );
   }
 
   return (
-    <PageLayout breadcrumbs={[{ label: "Customers" }]}>
-      <PageHeader
-        title="Customers"
-        description="Manage your customer relationships and contact information."
-        actions={
-          <Button variant="default" onClick={() => navigate("/customers/new")}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Customer
-          </Button>
-        }
-      />
-
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          {error.message}
-        </Alert>
-      )}
-
-      {/* Filters */}
-      <div className="mb-4 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 max-w-sm">
+    <>
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row">
+        <div className="max-w-sm flex-1">
           <Input
             type="search"
             placeholder="Filter customers..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(event) => setSearchQuery(event.target.value)}
           />
         </div>
         <div className="w-full sm:w-40">
@@ -113,24 +94,20 @@ export default function IndexPage(): ReactElement {
         </div>
       </div>
 
-      {/* Customers Table or Empty State */}
       {filteredCustomers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-          <Users className="w-16 h-16 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+          <Users className="h-16 w-16 text-muted-foreground" />
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">No customers found</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {searchQuery || statusFilter !== "all"
                 ? "Try adjusting your filters to find what you're looking for."
                 : "Get started by creating your first customer record."}
             </p>
           </div>
           {!searchQuery && statusFilter === "all" && (
-            <Button
-              variant="default"
-              onClick={() => navigate("/customers/new")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
+            <Button variant="default" onClick={() => navigate("/customers/new")}>
+              <Plus className="mr-2 h-4 w-4" />
               Create Your First Customer
             </Button>
           )}
@@ -143,16 +120,11 @@ export default function IndexPage(): ReactElement {
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCustomers.map((customer) => (
-              <TableRow
-                key={customer.id}
-                className="cursor-pointer"
-                onClick={() => void navigate(`/customers/${customer.id}`)}
-              >
+              <TableRow key={customer.id}>
                 <TableCell>
                   <div className="font-semibold text-foreground">
                     {customer.company_name}
@@ -174,9 +146,7 @@ export default function IndexPage(): ReactElement {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={
-                      customer.status === "active" ? "success" : "secondary"
-                    }
+                    variant={customer.status === "active" ? "success" : "secondary"}
                     className="gap-1.5"
                   >
                     <span
@@ -189,32 +159,17 @@ export default function IndexPage(): ReactElement {
                     {customer.status === "active" ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void navigate(`/customers/${customer.id}`);
-                      }}
-                    >
-                      View
-                    </Button>
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
 
-      {/* Summary Stats */}
       {filteredCustomers.length > 0 && (
         <div className="mt-2 text-sm text-muted-foreground">
           {filteredCustomers.length} of {customers.length} customer(s)
         </div>
       )}
-    </PageLayout>
+    </>
   );
 }

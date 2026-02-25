@@ -12,3 +12,18 @@ vi.spyOn(console, 'error').mockImplementation(() => {});
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'info').mockImplementation(() => {});
 vi.spyOn(console, 'debug').mockImplementation(() => {});
+
+if (!window.matchMedia) {
+  window.matchMedia = ((query: string): MediaQueryList => {
+    return {
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    };
+  }) as typeof window.matchMedia;
+}

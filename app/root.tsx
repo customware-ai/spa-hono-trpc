@@ -16,7 +16,6 @@ import "./app.css";
 import { logger } from "./utils/logger";
 import { Card, CardContent } from "./components/ui/Card";
 import { Button } from "./components/ui/Button";
-import { TRPCProvider } from "./lib/trpc-provider";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -80,11 +79,7 @@ export function HydrateFallback(): ReactElement {
 }
 
 export default function App(): ReactElement {
-  return (
-    <TRPCProvider>
-      <Outlet />
-    </TRPCProvider>
-  );
+  return <Outlet />;
 }
 
 export function ErrorBoundary({

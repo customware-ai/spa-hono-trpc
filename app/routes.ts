@@ -1,21 +1,20 @@
 /**
  * Route Configuration
  *
- * Client-Side Routes for SPA
- * API endpoints are handled by tRPC at /trpc/* (served by Hono)
+ * Simplified SPA routes for customer list and customer creation.
+ * Shared layout wraps all customer pages.
  */
 
 import {
   type RouteConfig,
   index,
+  layout,
   route,
 } from "@react-router/dev/routes";
 
 export default [
-  // Customers list
-  index("routes/index.tsx"),
-
-  // Customer Routes
-  route("customers/new", "routes/customers.new.tsx"),
-  route("customers/:id", "routes/customers.$id.tsx"),
+  layout("layouts/MainLayout.tsx", [
+    index("routes/index.tsx"),
+    route("customers/new", "routes/customers.new.tsx"),
+  ]),
 ] satisfies RouteConfig;

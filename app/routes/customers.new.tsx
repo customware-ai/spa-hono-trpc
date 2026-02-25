@@ -1,14 +1,12 @@
 /**
- * New Customer Form Route - Client-Side Rendered with tRPC
+ * New Customer Form Route
  *
- * Form for creating new customer records using tRPC mutation.
+ * Persists customer records directly to browser localStorage.
  */
 
-import type { ReactElement } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactElement } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { PageLayout } from "../components/layout/PageLayout";
-import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardFooter } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -16,68 +14,65 @@ import { Textarea } from "../components/ui/Textarea";
 import { Select } from "../components/ui/Select";
 import { Label } from "../components/ui/Label";
 import { Alert } from "../components/ui/Alert";
-import { trpc } from "../lib/trpc";
+import { addCustomerToStorage } from "../lib/local-storage";
 
 /**
- * New Customer Form Component
+ * Customer creation form component.
  */
-
 export default function NewCustomerPage(): ReactElement {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  
-  // tRPC mutation for creating customer
-  const createCustomer = trpc.createCustomer.useMutation({
-    onSuccess: () => {
-      // Invalidate customers query to refetch data
-      void utils.getCustomers.invalidate();
-      // Navigate back to customers list
-      void navigate("/");
-    },
-  });
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+  const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Extract and validate form data
-    const data = {
-      company_name: formData.get("company_name") as string,
-      email: (formData.get("email") as string) || undefined,
-      phone: (formData.get("phone") as string) || undefined,
-      status: (formData.get("status") as "active" | "inactive") || "active",
-      notes: (formData.get("notes") as string) || undefined,
-    };
+  /**
+   * Safely reads a string value from FormData entries.
+   * This avoids implicit object stringification for File values.
+   */
+  const readFormString = (value: FormDataEntryValue | null): string => {
+    if (typeof value !== "string") {
+      return "";
+    }
 
-    createCustomer.mutate(data);
+    return value.trim();
   };
 
-  const isSubmitting = createCustomer.isPending;
-  const error = createCustomer.error;
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const formData = new FormData(event.currentTarget);
+
+    const createdCustomer = addCustomerToStorage({
+      company_name: readFormString(formData.get("company_name")),
+      email: readFormString(formData.get("email")) || undefined,
+      phone: readFormString(formData.get("phone")) || undefined,
+      status,
+      notes: readFormString(formData.get("notes")) || undefined,
+    });
+
+    if (!createdCustomer) {
+      setErrorMessage("Please provide valid customer details and try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    void navigate("/");
+  };
 
   return (
-    <PageLayout
-      breadcrumbs={[
-        { label: "Customers", href: "/" },
-        { label: "New Customer" },
-      ]}
-    >
-      <PageHeader
-        title="New Customer"
-        description="Create a new customer record with contact and billing information."
-      />
-
-      {/* Error Alert */}
-      {error && (
+    <>
+      {errorMessage && (
         <Alert variant="destructive" className="mb-6">
-          {error.message}
+          {errorMessage}
         </Alert>
       )}
 
       <Card>
         <form onSubmit={handleSubmit}>
-          <CardContent className="p-6 pt-0 space-y-6">
-            {/* Company Name */}
+          <CardContent className="space-y-6 p-6 pt-0">
             <div className="space-y-2">
               <Label htmlFor="company_name">
                 Company Name <span className="text-destructive">*</span>
@@ -92,8 +87,7 @@ export default function NewCustomerPage(): ReactElement {
               />
             </div>
 
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -117,25 +111,22 @@ export default function NewCustomerPage(): ReactElement {
               </div>
             </div>
 
-            {/* Status */}
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <input type="hidden" name="status" value="active" />
+              <Label>Status</Label>
               <Select
                 options={[
                   { label: "Active", value: "active" },
                   { label: "Inactive", value: "inactive" },
                 ]}
-                value="active"
+                value={status}
+                onChange={(value) =>
+                  setStatus(value === "inactive" ? "inactive" : "active")
+                }
                 placeholder="Select status"
                 disabled={isSubmitting}
-                onChange={(_val) => {
-                  // Controlled by hidden input for now
-                }}
               />
             </div>
 
-            {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -148,7 +139,7 @@ export default function NewCustomerPage(): ReactElement {
             </div>
           </CardContent>
 
-          <CardFooter className="flex items-center mt-2 justify-end gap-3 pt-6 border-t">
+          <CardFooter className="mt-2 flex items-center justify-end gap-3 border-t pt-6">
             <Button
               type="button"
               variant="outline"
@@ -168,6 +159,6 @@ export default function NewCustomerPage(): ReactElement {
           </CardFooter>
         </form>
       </Card>
-    </PageLayout>
+    </>
   );
 }
