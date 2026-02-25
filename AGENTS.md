@@ -19,6 +19,7 @@ Jump to section:
 | [Directory Structure](#directory-structure)           | File organization and structure principles                   |
 | [Design System](#design-system)                       | Colors, typography, component patterns                       |
 | [UX Requirements](#-user-experience-ux-requirements)  | Loading states, error handling, responsive design, animation |
+| [Logging and Debugging](#logging-and-debugging)       | Custom runtime logging and recovery guidance                 |
 | [React Component Patterns](#react-component-patterns) | Component structure, route patterns                          |
 | [Testing Patterns](#testing-patterns)                 | Component and service testing                                |
 | [React Router v7 Reference](#react-router-v7-guide)   | Client routing, `routes.ts` APIs, and tRPC query/mutations   |
@@ -935,6 +936,12 @@ Use `--status failed` if the task cannot be completed, with a summary explaining
 - Read `AGENTS.md` for instructions on how to develop with the system
 - If the README points to other sources of truth (e.g. `.env.example`, `package.json`, `docs/`), read those too
 
+## Important: Logging and Debugging
+
+Overview is detailed at the bottom of this document. Make full use of the logging system to debug issues and NEVER remove logging.
+
+---
+
 ## React Router v7 Guide
 
 > **CRITICAL**: This section is the authoritative reference for **client-side routing only**. In this codebase, React Router is used for navigation, route hierarchy, and route module boundaries (not as a full-stack data framework).
@@ -1266,3 +1273,18 @@ export function ErrorBoundary(): ReactElement {
 
 - `react-router.config.ts` enables `future.v8_viteEnvironmentApi: true`
 - `vite.config.ts` uses Vite 8-compatible settings
+
+---
+
+## IMPORTANT: Logging and Debugging
+
+- This project uses custom runtime logging for both frontend and backend.
+- Frontend errors are captured from browser globals and forwarded to `POST /logs`, then written to the project-root `.runtime.logs`.
+- Backend errors (including process-level failures, unhandled app errors, and missing routes) are also written to `.runtime.logs`.
+- If users report issues, debug by reading `.runtime.logs` first before any other investigation.
+- The following logging pieces are critical and must not be removed:
+  - `app/utils/error-logger.ts`
+  - `app/routes.ts` logging bootstrap usage
+  - `server/services/logging.ts`
+  - `server/contracts/logging.ts`
+  - `server/index.ts` logging routes and handlers
