@@ -12,7 +12,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "CI=true PORT=4444 npm run start",
+    command: "PORT=4444 node build/server/start.js",
     url: "http://127.0.0.1:4444",
     reuseExistingServer: false,
     timeout: 120_000,

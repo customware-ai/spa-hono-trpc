@@ -7,7 +7,7 @@
     "build:client": "react-router build",
     "build:server": "tsc --project server/tsconfig.json",
     "build": "npm run build:client && npm run build:server",
-    "start": "node build/server/start.js",
+    "start": "PORT=8080 node build/server/start.js",
     "typegen": "react-router typegen",
     "typecheck": "react-router typegen && tsc && tsc --project server/tsconfig.json",
     "lint": "oxlint --type-aware .",

@@ -11,6 +11,8 @@ interface SeedCustomer {
   updated_at: string;
 }
 
+console.log("👀 Customers e2e tests ", process.env.PORT);
+
 const CUSTOMERS_STORAGE_KEY = "cohesiv_customers";
 
 /**
@@ -50,10 +52,14 @@ test.describe("customers e2e", () => {
       page.getByRole("button", { name: "Create Your First Customer" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Create Your First Customer" }).click();
+    await page
+      .getByRole("button", { name: "Create Your First Customer" })
+      .click();
 
     await expect(page).toHaveURL(/\/customers\/new$/);
-    await expect(page.getByRole("heading", { name: "New Customer" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "New Customer" }),
+    ).toBeVisible();
   });
 
   test("creates a customer and persists it across reload", async ({ page }) => {
@@ -77,7 +83,9 @@ test.describe("customers e2e", () => {
     await expect(page.getByText("1 of 1 customer(s)")).toBeVisible();
   });
 
-  test("filters seeded customers by search query and status", async ({ page }) => {
+  test("filters seeded customers by search query and status", async ({
+    page,
+  }) => {
     const now = new Date().toISOString();
     await seedCustomers(page, [
       {
