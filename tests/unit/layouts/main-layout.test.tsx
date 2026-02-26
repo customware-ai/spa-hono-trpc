@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import MainLayout from "../../app/layouts/MainLayout";
+import MainLayout from "../../../app/layouts/MainLayout";
 
 /**
  * Builds a memory router around the shared customer layout.

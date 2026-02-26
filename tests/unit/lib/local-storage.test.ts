@@ -3,7 +3,7 @@ import {
   addCustomerToStorage,
   clearCustomersFromStorage,
   getCustomersFromStorage,
-} from "../../app/lib/local-storage";
+} from "../../../app/lib/local-storage";
 
 describe("local-storage util", () => {
   beforeEach(() => {

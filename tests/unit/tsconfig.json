@@ -1,7 +1,7 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["./**/*", "../app/**/*"]
+  "include": ["./**/*", "../../app/**/*"]
 }

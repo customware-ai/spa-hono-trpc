@@ -7,8 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: ["./tests/setup.ts"],
-    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    setupFiles: ["./tests/unit/setup.ts"],
+    include: ["tests/unit/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "build", ".react-router"],
     coverage: {
       provider: "v8",

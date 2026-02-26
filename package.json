@@ -12,6 +12,8 @@
     "typecheck": "react-router typegen && tsc && tsc --project server/tsconfig.json",
     "lint": "oxlint --type-aware .",
     "test": "vitest run",
+    "e2e:install": "playwright install",
+    "e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run build && npm run test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db/migrate.ts"
@@ -50,6 +52,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@react-router/dev": "7.13.0",
     "@tailwindcss/vite": "4.1.18",
     "@testing-library/jest-dom": "6.9.1",

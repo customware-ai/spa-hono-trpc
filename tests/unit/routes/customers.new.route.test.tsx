@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import NewCustomerPage from "../../app/routes/customers.new";
+import NewCustomerPage from "../../../app/routes/customers.new";
 import {
   clearCustomersFromStorage,
   getCustomersFromStorage,
-} from "../../app/lib/local-storage";
+} from "../../../app/lib/local-storage";
 
 const navigateMock = vi.fn();
 

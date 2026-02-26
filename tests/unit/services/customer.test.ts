@@ -1,12 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { getDatabase } from "../../server/db/index.js";
-import { runMigrations } from "../../server/db/migrate.js";
-import { customers } from "../../server/db/schemas.js";
+import { getDatabase } from "../../../server/db/index.js";
+import { runMigrations } from "../../../server/db/migrate.js";
+import { customers } from "../../../server/db/schemas.js";
 import {
   createCustomer,
   listCustomers,
-} from "../../server/services/customer.js";
+} from "../../../server/services/customer.js";
 
 /**
  * Ensures the template schema exists before service tests execute.

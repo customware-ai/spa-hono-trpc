@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import IndexPage from "../../app/routes/index";
+import IndexPage from "../../../app/routes/index";
 import {
   clearCustomersFromStorage,
   setCustomersInStorage,
-} from "../../app/lib/local-storage";
+} from "../../../app/lib/local-storage";
 
 describe("customers index route", () => {
   beforeEach(() => {
