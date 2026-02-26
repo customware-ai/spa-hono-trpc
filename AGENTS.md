@@ -13,7 +13,7 @@ Jump to section:
 | Section                                               | Description                                                  |
 | ----------------------------------------------------- | ------------------------------------------------------------ |
 | [Core Principles](#-core-principles)                  | Type safety, architecture, error handling, testing, UX       |
-| [Commands](#commands)                                 | npm scripts for dev, build, test, lint                       |
+| [Commands](#commands)                                 | npm scripts for dev, build, test, lint, e2e                  |
 | [Architecture](#architecture)                         | Layered architecture, data flow, type safety                 |
 | [Development Requirements](#development-requirements) | Non-negotiable rules, code style, patterns                   |
 | [Directory Structure](#directory-structure)           | File organization and structure principles                   |
@@ -88,6 +88,7 @@ This codebase follows strict architectural patterns and coding standards:
 
 - **Frontend changes** (routes, components, hooks, UI behavior) → MUST have component tests
 - **Backend changes** (server services, contracts, db queries/operations, tRPC procedures) → MUST have unit/integration tests
+- **All code changes** → MUST add/update Playwright e2e tests after completing changes
 - **Bug fixes** → MUST have a test that reproduces the bug and verifies the fix
 - **New features** → MUST have tests covering happy paths AND error cases
 
@@ -96,7 +97,7 @@ This codebase follows strict architectural patterns and coding standards:
 1. **NO CODE WITHOUT TESTS**: If you modify or add code, you MUST add/update tests. No exceptions.
 2. **Tests before completion**: Never mark a task as complete without corresponding test coverage
 3. **Test the behavior, not the implementation**: Tests should verify what the code does, not how it does it
-4. **Run tests before finishing**: Always run `npm test` to verify all tests pass
+4. **Run tests before finishing**: Always run `npm test` and `npm run e2e` to verify all tests pass
 
 **What to test:**
 
@@ -112,12 +113,14 @@ This codebase follows strict architectural patterns and coding standards:
 
 ```bash
 npm test                           # Run all tests
-npx vitest run tests/path/file.test.ts  # Run specific test file
+npx vitest run tests/unit/path/file.test.ts  # Run specific test file
 npm run check                      # Full validation (includes tests)
+npm run e2e                        # Run Playwright e2e tests against built app
 ```
 
 - Run the narrowest relevant check based on what changed
 - Run `npm run check` at the very end only when multiple areas are updated
+- After `npm run check` passes for code changes, run `npm run e2e` before marking the task complete
 - No need to run checks for docs-only/non-code changes
 
 ### 5. **Code Quality Standards**
@@ -153,12 +156,14 @@ npm run typecheck     # TypeScript checking + React Router typegen
 npm run lint          # Type-aware linting with oxlint
 npm test              # Run all tests with Vitest
 npm run check         # Run typecheck + lint + build + test (full validation)
+npm run e2e           # Run Playwright e2e tests against built app on port 4444
+npm run e2e:dev       # Run Playwright e2e tests against Vite dev server
 ```
 
 To run a single test file:
 
 ```bash
-npx vitest run tests/db/db.test.ts
+npx vitest run tests/unit/db/db.test.ts
 ```
 
 ### Dependency Baseline
@@ -297,6 +302,7 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
    - Run checks only at the very end of the task (right before marking it complete). Use focused validation based on the scope of changes (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated, `npm run lint` for lint-focused refactors). Skip checks for non-code-only changes (e.g. Markdown/docs, copy, comments, or other non-executable content).
    - Run `npm run check` at the very end only when multiple areas are updated
    - This runs: typecheck + lint + build + test
+   - After `npm run check` passes for code changes, run `npm run e2e`
    - ALL checks must pass before considering task complete
    - Fix any errors before moving to next task
 
@@ -514,10 +520,12 @@ server/
     ├── calculations.ts  # Domain calculations
     └── validate.ts      # Shared validation helper
 
-tests/                   # Test files mirror active app/server boundaries
-├── components/          # UI component tests
-├── db/                  # Database operation tests
-└── services/            # Business logic tests
+tests/
+├── unit/                # Unit/component/integration tests
+│   ├── components/      # UI component tests
+│   ├── db/              # Database operation tests
+│   └── services/        # Business logic tests
+└── e2e/                 # Playwright end-to-end tests
 ```
 
 **Structure Principles:**
@@ -854,7 +862,7 @@ oxlint enforces strict standards:
 
 > **CRITICAL**: See [Testing Requirements](#4-testing-requirements--enforced) for mandatory rules. ALL code changes require tests.
 
-**Tools:** Vitest + React Testing Library
+**Tools:** Vitest + React Testing Library + Playwright
 
 **Component Test Pattern:**
 
@@ -897,7 +905,7 @@ describe("User Service", () => {
 });
 ```
 
-**Organization:** Tests in `tests/` mirroring active boundaries (`app/components`, `server/db`, `server/services`). Test happy paths AND error cases.
+**Organization:** Unit tests in `tests/unit/` mirroring active boundaries (`app/components`, `server/db`, `server/services`) and browser e2e tests in `tests/e2e/`. Test happy paths AND error cases.
 
 ### Path Alias
 
@@ -919,6 +927,7 @@ Re-read files anytime especially when the conversation is compacted:
 
 - Always call task_complete - never delete task files manually
 - Run checks only at the very end of each task: use the narrowest relevant check for scoped changes, and use `npm run check` only when multiple areas were updated
+- For code changes, run `npm run e2e` after `npm run check` before marking a task complete
 - No need to run checks for docs-only/non-code-only updates (e.g. Markdown/docs, copy, comments, or other non-executable content)
 - If you feel the conversation is getting long, do NOT summarize and stop - keep executing task
 

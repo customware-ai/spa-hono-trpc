@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   use: {
-    baseURL: "http://127.0.0.1:4444",
+    baseURL: "http://127.0.0.1:4173",
     browserName: "chromium",
     launchOptions: {
       args: ["--no-sandbox"],
@@ -12,9 +12,9 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "CI=true PORT=4444 npm run start",
-    url: "http://127.0.0.1:4444",
-    reuseExistingServer: false,
+    command: "CI=true npx vite --host 127.0.0.1 --port 4173",
+    url: "http://127.0.0.1:4173",
+    reuseExistingServer: process.env.CI !== "true",
     timeout: 120_000,
   },
 });
