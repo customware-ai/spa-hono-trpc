@@ -28,6 +28,8 @@ describe("customer service example", () => {
     const result = await createCustomer({
       company_name: "Template Co",
       email: "hello@template.co",
+      phone: "+1 555 0111",
+      notes: "Primary template account",
     });
 
     expect(result.isOk()).toBe(true);
@@ -37,7 +39,9 @@ describe("customer service example", () => {
 
     expect(result.value.company_name).toBe("Template Co");
     expect(result.value.email).toBe("hello@template.co");
+    expect(result.value.phone).toBe("+1 555 0111");
     expect(result.value.status).toBe("active");
+    expect(result.value.notes).toBe("Primary template account");
   });
 
   it("returns validation error for invalid create payload", async () => {

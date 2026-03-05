@@ -1,43 +1,12 @@
-import { expect, test, type Page } from "@playwright/test";
-
-interface SeedCustomer {
-  id: number;
-  company_name: string;
-  email: string | null;
-  phone: string | null;
-  status: "active" | "inactive";
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-console.log("👀 Customers e2e tests ", process.env.PORT);
-
-const CUSTOMERS_STORAGE_KEY = "cohesiv_customers";
+import { expect, test } from "@playwright/test";
+import { resetCustomerTable, seedCustomers } from "./database";
 
 /**
- * Seeds customer rows before app scripts execute so the UI bootstraps from known state.
+ * Keeps backend customer state isolated between browser scenarios.
  */
-async function seedCustomers(
-  page: Page,
-  customers: SeedCustomer[],
-): Promise<void> {
-  await page.addInitScript(
-    ({
-      storageKey,
-      storageValue,
-    }: {
-      storageKey: string;
-      storageValue: string;
-    }): void => {
-      window.localStorage.setItem(storageKey, storageValue);
-    },
-    {
-      storageKey: CUSTOMERS_STORAGE_KEY,
-      storageValue: JSON.stringify(customers),
-    },
-  );
-}
+test.beforeEach(() => {
+  resetCustomerTable();
+});
 
 test.describe("customers e2e", () => {
   test("shows empty state and navigates to the new-customer form", async ({
@@ -75,7 +44,8 @@ test.describe("customers e2e", () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText("Acme Logistics")).toBeVisible();
     await expect(page.getByText("ops@acme-logistics.com")).toBeVisible();
-    await expect(page.getByText("Active")).toBeVisible();
+    await expect(page.getByText("+1 (555) 010-1234")).toBeVisible();
+    await expect(page.getByText("Active", { exact: true }).first()).toBeVisible();
 
     await page.reload();
 
@@ -86,27 +56,16 @@ test.describe("customers e2e", () => {
   test("filters seeded customers by search query and status", async ({
     page,
   }) => {
-    const now = new Date().toISOString();
-    await seedCustomers(page, [
+    seedCustomers([
       {
-        id: 1,
         company_name: "Northwind Traders",
         email: "sales@northwind.example",
-        phone: "+1 (555) 000-1111",
         status: "active",
-        notes: null,
-        created_at: now,
-        updated_at: now,
       },
       {
-        id: 2,
         company_name: "Southridge Retail",
         email: "ops@southridge.example",
-        phone: "+1 (555) 000-2222",
         status: "inactive",
-        notes: null,
-        created_at: now,
-        updated_at: now,
       },
     ]);
 

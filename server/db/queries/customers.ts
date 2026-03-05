@@ -72,7 +72,9 @@ export function createCustomerRow(
       .values({
         company_name: input.company_name,
         email: input.email ?? null,
+        phone: input.phone ?? null,
         status: input.status ?? "active",
+        notes: input.notes ?? null,
       })
       .returning();
 

@@ -12,10 +12,9 @@
     "typecheck": "react-router typegen && tsc && tsc --project server/tsconfig.json",
     "lint": "oxlint --type-aware .",
     "test": "vitest run",
-    "e2e:install": "playwright install",
-    "e2e": "PORT=4444 npm run build && playwright test",
-    "e2e:dev": "playwright test -c playwright.dev.config.ts",
     "check": "npm run typecheck && npm run lint && npm run build && npm run test",
+    "e2e:install": "playwright install",
+    "e2e": "npm run build && playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db/migrate.ts"
   },

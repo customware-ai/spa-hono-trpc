@@ -32,7 +32,7 @@ describe("main layout", () => {
       screen.getByRole("heading", { name: "Customers" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Manage customer records stored in your browser."),
+      screen.getByText("Manage customer records from the shared customer database."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New Customer" })).toBeInTheDocument();
     expect(screen.getByText("List body")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("main layout", () => {
       await screen.findByRole("heading", { name: "New Customer" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Create a new customer record in local storage."),
+      screen.getByText("Create a new customer record in the customer database."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "New Customer" })).toBeNull();
     expect(screen.getByText("New body")).toBeInTheDocument();

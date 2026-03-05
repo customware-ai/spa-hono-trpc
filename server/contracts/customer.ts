@@ -12,7 +12,9 @@ export const CustomerSchema = z.object({
   id: z.number().int().positive(),
   company_name: z.string().min(1),
   email: z.string().email().nullable(),
+  phone: z.string().nullable(),
   status: CustomerStatusSchema,
+  notes: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -23,7 +25,9 @@ export const CustomerSchema = z.object({
 export const CreateCustomerInputSchema = z.object({
   company_name: z.string().min(1).max(200),
   email: z.string().email().optional(),
+  phone: z.string().min(1).max(50).optional(),
   status: CustomerStatusSchema.optional(),
+  notes: z.string().max(2_000).optional(),
 });
 
 /**

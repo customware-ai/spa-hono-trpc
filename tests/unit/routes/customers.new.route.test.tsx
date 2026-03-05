@@ -3,12 +3,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import NewCustomerPage from "../../../app/routes/customers.new";
-import {
-  clearCustomersFromStorage,
-  getCustomersFromStorage,
-} from "../../../app/lib/local-storage";
+import type { Customer } from "../../../server/contracts/customer.js";
 
 const navigateMock = vi.fn();
+const createCustomerMutateAsyncMock = vi.fn();
+const listCustomersCancelMock = vi.fn();
+const listCustomersGetDataMock = vi.fn();
+const listCustomersSetDataMock = vi.fn();
+const listCustomersInvalidateMock = vi.fn();
+const createCustomerUseMutationMock = vi.fn();
 
 vi.mock("react-router", async () => {
   const actual = await vi.importActual<typeof import("react-router")>(
@@ -21,13 +24,65 @@ vi.mock("react-router", async () => {
   };
 });
 
+vi.mock("../../../app/lib/trpc", () => ({
+  trpc: {
+    createCustomer: {
+      useMutation: (...args: unknown[]): unknown =>
+        createCustomerUseMutationMock(...args),
+    },
+    useUtils: (): {
+      listCustomers: {
+        cancel: typeof listCustomersCancelMock;
+        getData: typeof listCustomersGetDataMock;
+        setData: typeof listCustomersSetDataMock;
+        invalidate: typeof listCustomersInvalidateMock;
+      };
+    } => ({
+      listCustomers: {
+        cancel: listCustomersCancelMock,
+        getData: listCustomersGetDataMock,
+        setData: listCustomersSetDataMock,
+        invalidate: listCustomersInvalidateMock,
+      },
+    }),
+  },
+}));
+
+/**
+ * Creates a persisted customer fixture for successful mutation flows.
+ */
+function createCustomerFixture(): Customer {
+  return {
+    id: 1,
+    company_name: "Umbrella Corp",
+    email: "contact@umbrella.com",
+    phone: null,
+    status: "active",
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
 describe("new customer route", () => {
   beforeEach(() => {
-    clearCustomersFromStorage();
     navigateMock.mockReset();
+    createCustomerMutateAsyncMock.mockReset();
+    listCustomersCancelMock.mockReset();
+    listCustomersGetDataMock.mockReset();
+    listCustomersSetDataMock.mockReset();
+    listCustomersInvalidateMock.mockReset();
+    listCustomersGetDataMock.mockReturnValue([]);
+
+    createCustomerUseMutationMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: createCustomerMutateAsyncMock,
+    });
   });
 
-  it("creates customer and redirects to list", async () => {
+  it("creates a customer through the backend mutation and redirects to list", async () => {
+    createCustomerMutateAsyncMock.mockResolvedValue(createCustomerFixture());
+
     render(
       <MemoryRouter>
         <NewCustomerPage />
@@ -47,9 +102,13 @@ describe("new customer route", () => {
       screen.getByRole("button", { name: "Create Customer" }),
     );
 
-    const customers = getCustomersFromStorage();
-    expect(customers).toHaveLength(1);
-    expect(customers[0].company_name).toBe("Umbrella Corp");
+    expect(createCustomerMutateAsyncMock).toHaveBeenCalledWith({
+      company_name: "Umbrella Corp",
+      email: "contact@umbrella.com",
+      notes: undefined,
+      phone: undefined,
+      status: "active",
+    });
     expect(navigateMock).toHaveBeenCalledWith("/");
   });
 });
