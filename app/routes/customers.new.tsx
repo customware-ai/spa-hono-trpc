@@ -14,13 +14,14 @@ import { Textarea } from "../components/ui/Textarea";
 import { Select } from "../components/ui/Select";
 import { Label } from "../components/ui/Label";
 import { Alert } from "../components/ui/Alert";
-import { addCustomerToStorage } from "../lib/local-storage";
+import { useCustomersStorage } from "../utils/customer-storage";
 
 /**
  * Customer creation form component.
  */
 export default function NewCustomerPage(): ReactElement {
   const navigate = useNavigate();
+  const { addCustomer } = useCustomersStorage();
 
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +46,7 @@ export default function NewCustomerPage(): ReactElement {
 
     const formData = new FormData(event.currentTarget);
 
-    const createdCustomer = addCustomerToStorage({
+    const createdCustomer = addCustomer({
       company_name: readFormString(formData.get("company_name")),
       email: readFormString(formData.get("email")) || undefined,
       phone: readFormString(formData.get("phone")) || undefined,

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Users } from "lucide-react";
 import { Button } from "../components/ui/Button";
@@ -16,9 +16,9 @@ import {
   TableRow,
 } from "../components/ui/Table";
 import {
-  getCustomersFromStorage,
   type LocalCustomer,
-} from "../lib/local-storage";
+  useCustomersStorage,
+} from "../utils/customer-storage";
 
 /**
  * Customers List Page
@@ -27,17 +27,10 @@ import {
  */
 export default function IndexPage(): ReactElement {
   const navigate = useNavigate();
+  const { customers, isHydrated } = useCustomersStorage();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [customers, setCustomers] = useState<LocalCustomer[]>([]);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect((): void => {
-    // Load persisted customers after mount to avoid hydration mismatch.
-    setCustomers(getCustomersFromStorage());
-    setIsReady(true);
-  }, []);
 
   const filteredCustomers = useMemo((): LocalCustomer[] => {
     return customers.filter((customer) => {
@@ -53,7 +46,7 @@ export default function IndexPage(): ReactElement {
     });
   }, [customers, searchQuery, statusFilter]);
 
-  if (!isReady) {
+  if (!isHydrated) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-10 w-full" />
