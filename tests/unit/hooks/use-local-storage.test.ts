@@ -1,16 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
 import { useLocalStorage } from "../../../app/hooks/use-local-storage";
 
 const SHARED_KEY = "shared-test-key";
 const COUNTER_KEY = "counter-test-key";
 const SETTINGS_KEY = "settings-test-key";
-
-const SettingsSchema = z.object({
-  enabled: z.boolean(),
-  theme: z.enum(["light", "dark"]),
-});
 
 describe("useLocalStorage", () => {
   beforeEach(() => {
@@ -30,16 +24,10 @@ describe("useLocalStorage", () => {
     );
 
     const { result } = renderHook(() =>
-      useLocalStorage(
-        SETTINGS_KEY,
-        {
-          enabled: false,
-          theme: "light",
-        },
-        {
-          schema: SettingsSchema,
-        },
-      ),
+      useLocalStorage(SETTINGS_KEY, {
+        enabled: false,
+        theme: "light",
+      }),
     );
 
     await waitFor(() => {
@@ -52,26 +40,14 @@ describe("useLocalStorage", () => {
     });
   });
 
-  it("falls back to the default value when stored data fails schema validation", async () => {
-    window.localStorage.setItem(
-      SETTINGS_KEY,
-      JSON.stringify({
-        enabled: "not-a-boolean",
-        theme: "dark",
-      }),
-    );
+  it("falls back to the default value when stored data is not valid JSON", async () => {
+    window.localStorage.setItem(SETTINGS_KEY, "{invalid-json");
 
     const { result } = renderHook(() =>
-      useLocalStorage(
-        SETTINGS_KEY,
-        {
-          enabled: false,
-          theme: "light",
-        },
-        {
-          schema: SettingsSchema,
-        },
-      ),
+      useLocalStorage(SETTINGS_KEY, {
+        enabled: false,
+        theme: "light",
+      }),
     );
 
     await waitFor(() => {

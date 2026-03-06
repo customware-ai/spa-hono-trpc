@@ -76,9 +76,6 @@ export function useCustomersStorage(): UseCustomersStorageResult {
   const [customers, setCustomers, isHydrated] = useLocalStorage(
     CUSTOMERS_STORAGE_KEY,
     EMPTY_CUSTOMERS,
-    {
-      schema: LocalCustomerListSchema,
-    },
   );
 
   /**

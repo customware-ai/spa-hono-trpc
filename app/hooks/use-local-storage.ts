@@ -1,5 +1,4 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
-import { z } from "zod";
 
 /**
  * Per-key subscriber registry for same-runtime hook instances.
@@ -14,14 +13,6 @@ const localStorageSubscribers = new Map<string, Set<() => void>>();
 type LocalStorageStateUpdater<TValue> =
   | TValue
   | ((previousValue: TValue) => TValue);
-
-/**
- * Runtime options for the generic localStorage hook.
- * Callers can provide a schema when stored data crosses a trust boundary.
- */
-interface UseLocalStorageOptions<TValue> {
-  schema?: z.ZodType<TValue>;
-}
 
 /**
  * Internal snapshot shape used to pair parsed data with the exact raw storage
@@ -52,13 +43,12 @@ function serializeLocalStorageValue<TValue>(value: TValue): string {
 
 /**
  * Parses a raw storage string into typed state.
- * When a schema is provided, invalid persisted payloads fall back to the given
- * default value instead of leaking untrusted data into the app.
+ * Invalid JSON falls back to the provided default value so template consumers
+ * get a predictable first-run experience without extra setup.
  */
 function parseLocalStorageSnapshot<TValue>(
   rawValue: string | null,
   defaultValue: TValue,
-  schema?: z.ZodType<TValue>,
 ): LocalStorageSnapshot<TValue> {
   if (rawValue === null) {
     return {
@@ -68,25 +58,8 @@ function parseLocalStorageSnapshot<TValue>(
   }
 
   try {
-    const parsedJson: unknown = JSON.parse(rawValue);
-
-    if (!schema) {
-      return {
-        value: parsedJson as TValue,
-        rawValue,
-      };
-    }
-
-    const validation = schema.safeParse(parsedJson);
-    if (!validation.success) {
-      return {
-        value: defaultValue,
-        rawValue,
-      };
-    }
-
     return {
-      value: validation.data,
+      value: JSON.parse(rawValue) as TValue,
       rawValue,
     };
   } catch {
@@ -106,9 +79,8 @@ function createStoreSnapshot<TValue>(
   rawValue: string | null,
   defaultValue: TValue,
   isHydrated: boolean,
-  schema?: z.ZodType<TValue>,
 ): LocalStorageStoreSnapshot<TValue> {
-  const parsedSnapshot = parseLocalStorageSnapshot(rawValue, defaultValue, schema);
+  const parsedSnapshot = parseLocalStorageSnapshot(rawValue, defaultValue);
 
   return {
     value: parsedSnapshot.value,
@@ -154,16 +126,14 @@ export function clearLocalStorageKey(key: string): void {
 export function useLocalStorage<TValue>(
   key: string,
   defaultValue: TValue,
-  options?: UseLocalStorageOptions<TValue>,
 ): readonly [TValue, (nextValue: LocalStorageStateUpdater<TValue>) => void, boolean] {
   const defaultValueRef = useRef(defaultValue);
   const clientSnapshotRef = useRef<LocalStorageStoreSnapshot<TValue>>(
-    createStoreSnapshot(null, defaultValueRef.current, false, options?.schema),
+    createStoreSnapshot(null, defaultValueRef.current, false),
   );
   const serverSnapshotRef = useRef<LocalStorageStoreSnapshot<TValue>>(
-    createStoreSnapshot(null, defaultValueRef.current, false, options?.schema),
+    createStoreSnapshot(null, defaultValueRef.current, false),
   );
-  const schema = options?.schema;
 
   /**
    * Subscribes to storage changes for the requested key.
@@ -216,11 +186,10 @@ export function useLocalStorage<TValue>(
       rawValue,
       defaultValueRef.current,
       true,
-      schema,
     );
 
     return clientSnapshotRef.current;
-  }, [key, schema]);
+  }, [key]);
 
   /**
    * Returns the server-safe snapshot used during the prerender and hydration
@@ -232,12 +201,11 @@ export function useLocalStorage<TValue>(
         null,
         defaultValueRef.current,
         false,
-        schema,
       );
 
       return serverSnapshotRef.current;
     },
-    [schema],
+    [],
   );
 
   const storeSnapshot = useSyncExternalStore(
