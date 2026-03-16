@@ -13,9 +13,12 @@ import { AlertTriangle } from "lucide-react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { initializePosthogForIframe } from "./lib/posthog";
 import { logFrontendError } from "./utils/error-logger";
 import { Card, CardContent } from "./components/ui/Card";
 import { Button } from "./components/ui/Button";
+
+initializePosthogForIframe();
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

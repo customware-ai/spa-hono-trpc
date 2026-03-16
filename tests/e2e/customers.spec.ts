@@ -102,4 +102,14 @@ test.describe("customers e2e", () => {
       page.getByRole("heading", { name: "Customers", exact: true }),
     ).toBeVisible();
   });
+
+  test("loads customer list with PostHog iframe bootstrap params", async ({
+    page,
+  }) => {
+    await page.goto("/?ph_distinct_id=user-123&ph_session_id=session-456");
+
+    await expect(
+      page.getByRole("heading", { name: "No customers found" }),
+    ).toBeVisible();
+  });
 });
