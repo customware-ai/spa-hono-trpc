@@ -72,6 +72,7 @@ This template demonstrates:
 | tailwindcss           | 4.1.18        | Styling                         |
 | zod                   | 4.3.6         | Schema validation               |
 | neverthrow            | 8.2.0         | Type-safe error handling        |
+| posthog-js            | ^1.360.2      | Client-side product analytics   |
 | vitest                | 4.0.18        | Testing framework               |
 | oxlint                | 1.47.0        | Type-aware linting              |
 | better-sqlite3        | ^12.6.2       | SQLite runtime                  |
@@ -100,6 +101,25 @@ npm run build
 npm run start
 ```
 
+## 📊 PostHog Analytics (Optional)
+
+PostHog is initialized once at app bootstrap in `app/root.tsx` via `app/lib/posthog.ts`.
+
+Set environment variables to enable analytics:
+
+```bash
+VITE_POSTHOG_KEY=phc_your_public_project_key
+# Optional (defaults to https://us.i.posthog.com)
+VITE_POSTHOG_HOST=https://us.i.posthog.com
+```
+
+Notes:
+
+- If `VITE_POSTHOG_KEY` is not set, analytics initialization is skipped.
+- Iframe bootstrap IDs are supported via URL params:
+  - `ph_distinct_id`
+  - `ph_session_id`
+
 ## 📁 Project Structure
 
 ```text
@@ -113,6 +133,7 @@ app/
 ├── lib/
 │   ├── trpc.ts                # Typed tRPC client type binding
 │   ├── trpc-provider.tsx      # Typed provider scaffolding
+│   ├── posthog.ts             # PostHog client initialization (optional)
 │   └── utils.ts
 ├── routes/
 │   ├── index.tsx              # Customer list page
