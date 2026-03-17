@@ -84,11 +84,16 @@ This codebase follows strict architectural patterns and coding standards:
 
 > **CRITICAL**: All code changes MUST include corresponding tests. A task is NOT complete if tests are missing.
 
+Testing order matters:
+- `npm run check` is the static-analysis gate. Run it near the end to catch obvious type and lint errors before deeper verification.
+- Interactive Playwright verification is the user-perspective gate. Use it to confirm the changed flow actually works in the UI the way a user would experience it.
+- Targeted unit/component/integration tests and targeted E2E tests are the regression gates. Write or update them after the behavior is confirmed so future changes do not break the expected flow.
+
 **Mandatory Test Coverage:**
 
-- **Frontend changes** (routes, components, hooks, UI behavior) → MUST have component tests
-- **Backend changes** (server services, contracts, db queries/operations, tRPC procedures) → MUST have unit/integration tests
-- **All code changes** → MUST run interactive Playwright verification for the changed flow before creating or modifying Playwright e2e tests
+- **Frontend changes** (routes, components, hooks, UI behavior) → MUST create or modify the related component/unit tests and run those specific test files
+- **Backend changes** (server services, contracts, db queries/operations, tRPC procedures) → MUST create or modify the related unit/integration tests and run those specific test files
+- **All code changes** → MUST run interactive Playwright verification for the changed flow before creating or modifying unit tests or Playwright e2e tests
 - **All code changes** → MUST create or modify Playwright e2e tests for the changed flow
 - **Bug fixes** → MUST have a test that reproduces the bug and verifies the fix
 - **New features** → MUST have tests covering happy paths AND error cases
@@ -98,8 +103,9 @@ This codebase follows strict architectural patterns and coding standards:
 1. **NO CODE WITHOUT TESTS**: If you modify or add code, you MUST add/update tests. No exceptions.
 2. **Tests before completion**: Never mark a task as complete without corresponding test coverage
 3. **Test the behavior, not the implementation**: Tests should verify what the code does, not how it does it
-4. **Interactive verification first**: Run interactive Playwright verification for the changed flow before creating or modifying Playwright e2e tests
-5. **Run tests before finishing**: Always run the relevant tests needed to verify the changed behavior before completing the task
+4. **Interactive verification first**: Run interactive Playwright verification for the changed flow before creating or modifying unit tests or Playwright e2e tests
+5. **Targeted unit tests before e2e**: After interactive verification passes, create or modify and run only the unit/component/integration test files relevant to the changed behavior
+6. **Run tests before finishing**: Always run the relevant targeted tests needed to verify the changed behavior before completing the task
 
 **What to test:**
 
@@ -116,13 +122,16 @@ This codebase follows strict architectural patterns and coding standards:
 ```bash
 npm test                           # Run all tests
 npx vitest run tests/unit/path/file.test.ts  # Run specific test file
-npm run check                      # Full validation (includes tests)
+npm run check                      # Run typecheck + lint
 npm run build && npx playwright test tests/e2e/path/spec.ts   # Build first, then run targeted Playwright e2e coverage
 ```
 
 - Run the narrowest relevant check based on what changed
-- Run interactive Playwright verification first for the changed flow
-- After the interactive verification passes, create or modify and run only the targeted E2E spec(s) for the changed flow
+- At the very end of the task, run `npm run check`; if it fails, fix the issues and rerun until it passes
+- After `npm run check` passes, run interactive Playwright verification for the changed flow; if it fails, fix the issues and rerun until it passes
+- After the interactive verification passes, create or modify and run only the targeted unit/component/integration test files for the changed behavior; if they fail, fix the issues and rerun until they pass
+- After the targeted unit/component/integration tests pass, create or modify and run only the targeted E2E spec(s) for the changed flow
+- This order is intentional: static analysis first to catch obvious mistakes cheaply, interactive verification next to confirm the real user flow, then targeted automated tests to lock that verified behavior in place
 - Run `npm run check` at the very end only when multiple areas are updated
 - If higher-priority task instructions define a stricter or different validation workflow, follow those instructions
 - No need to run checks for docs-only/non-code changes
@@ -159,7 +168,7 @@ npm run db:migrate    # Run server database migrations
 npm run typecheck     # TypeScript checking + React Router typegen
 npm run lint          # Type-aware linting with oxlint
 npm test              # Run all tests with Vitest
-npm run check         # Run typecheck + lint + build + test (full validation)
+npm run check         # Run typecheck + lint
 npm run build && npx playwright test tests/e2e/path/spec.ts # Build first, then run a targeted Playwright e2e spec against the built app on port 4444
 ```
 
@@ -304,8 +313,13 @@ const createCustomerMutation = trpc.createCustomer.useMutation();
 3. **Validation Before Completion**
    - Run checks only at the very end of the task (right before marking it complete). Use focused validation based on the scope of changes (e.g. `npm run typecheck` when only TypeScript/types are modified, `npm test` when tests are updated, `npm run lint` for lint-focused refactors). Skip checks for non-code-only changes (e.g. Markdown/docs, copy, comments, or other non-executable content).
    - Run `npm run check` at the very end only when multiple areas are updated
-   - This runs: typecheck + lint + build + test
-   - After `npm run check` passes for code changes, run `npm run build && npx playwright test <spec>` for the targeted changed flow
+   - This runs: typecheck + lint
+   - Use `npm run check` as the static-analysis gate so obvious type and lint errors are fixed before deeper verification
+   - After `npm run check` passes for code changes, run interactive Playwright verification for the changed flow and fix/retry until it passes
+   - Interactive Playwright is the user-perspective gate and should be treated as the source of truth for whether the changed flow behaves correctly in the UI
+   - After interactive verification passes, create or modify and run only the targeted unit/component/integration test files for the changed behavior and fix/retry until they pass
+   - After the targeted unit/component/integration tests pass, run `npm run build && npx playwright test <spec>` for the targeted changed flow
+   - The targeted automated tests come after interactive verification so they capture the behavior that was just confirmed from the user perspective
    - ALL checks must pass before considering task complete
    - Fix any errors before moving to next task
 
@@ -931,7 +945,7 @@ Re-read files anytime especially when the conversation is compacted:
 
 - Always call task_complete - never delete task files manually
 - Run checks only at the very end of each task: use the narrowest relevant check for scoped changes, and use `npm run check` only when multiple areas were updated
-- For code changes, run `npm run build && npx playwright test <spec>` for the targeted changed flow after `npm run check` before marking a task complete
+- For code changes, after `npm run check` passes, run interactive Playwright verification for the changed flow, then create or modify and run the targeted unit/component/integration test files for the changed behavior, then run `npm run build && npx playwright test <spec>` for the targeted changed flow before marking a task complete
 - No need to run checks for docs-only/non-code-only updates (e.g. Markdown/docs, copy, comments, or other non-executable content)
 - If you feel the conversation is getting long, do NOT summarize and stop - keep executing task
 
